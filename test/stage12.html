@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>대나무 공방 - 12단계 깃 붙이기</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f2ead8;
+      --gold: #d7ad6c;
+      --panel: rgba(25, 34, 31, .9);
+      --line: rgba(232, 214, 174, .18);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #17211e;
+      color: var(--ink);
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    }
+
+    button { font: inherit; }
+    #scene { position: fixed; inset: 0; z-index: 0; }
+    #scene canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+    .vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(13, 20, 18, .86), rgba(13, 20, 18, .38) 36%, transparent 68%),
+        linear-gradient(0deg, rgba(11, 17, 15, .76), transparent 38%, rgba(11, 17, 15, .22));
+    }
+    #interface { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+    .topbar {
+      position: absolute;
+      top: 26px;
+      right: clamp(24px, 4.2vw, 66px);
+      left: clamp(24px, 4.2vw, 66px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      display: grid;
+      width: 39px;
+      height: 39px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .65);
+      border-radius: 50%;
+      color: var(--gold);
+      font: 19px Georgia, serif;
+    }
+    .brand-copy { display: grid; gap: 3px; }
+    .brand-copy small { color: var(--gold); font-size: 9px; font-weight: 700; letter-spacing: .22em; }
+    .brand-copy strong { font-size: 14px; font-weight: 600; letter-spacing: .08em; }
+    .stage-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px 9px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(21, 29, 26, .64);
+      color: #e8dfcc;
+      font-size: 12px;
+      backdrop-filter: blur(12px);
+    }
+    .stage-chip b {
+      display: grid;
+      width: 27px;
+      height: 27px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--gold);
+      color: #20231c;
+      font: 12px Georgia, serif;
+    }
+    .intro {
+      position: absolute;
+      top: clamp(145px, 25vh, 220px);
+      left: clamp(44px, 7vw, 112px);
+      width: min(460px, 39vw);
+    }
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 19px;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .2em;
+    }
+    .eyebrow::before { width: 24px; height: 1px; background: var(--gold); content: ""; }
+    h1 {
+      margin: 0;
+      font-family: "Batang", "Nanum Myeongjo", "Malgun Gothic", serif;
+      font-size: clamp(34px, 3.5vw, 49px);
+      font-weight: 500;
+      letter-spacing: -.08em;
+      line-height: 1.35;
+      text-shadow: 0 3px 24px rgba(0, 0, 0, .35);
+    }
+    h1 em { color: #d9c294; font-style: normal; }
+    #instruction {
+      min-height: 48px;
+      margin: 18px 0 0;
+      color: #c7c7b8;
+      font-size: 13px;
+      letter-spacing: -.025em;
+      line-height: 1.8;
+      word-break: keep-all;
+    }
+    .gesture-note { display: flex; align-items: center; gap: 11px; margin-top: 24px; color: #a7ad9e; font-size: 11px; }
+    .gesture-mark {
+      display: grid;
+      width: 31px;
+      height: 31px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .6);
+      border-radius: 50%;
+      color: var(--gold);
+      font-size: 14px;
+    }
+    .bottom-area { position: absolute; right: 24px; bottom: 30px; left: 24px; display: flex; justify-content: center; }
+    .progress-card {
+      width: min(520px, 100%);
+      padding: 17px 21px 15px;
+      border: 1px solid rgba(221, 204, 163, .22);
+      border-radius: 14px;
+      background: var(--panel);
+      box-shadow: 0 18px 55px rgba(0, 0, 0, .28);
+      backdrop-filter: blur(16px);
+    }
+    .progress-head, .progress-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .progress-title { display: flex; align-items: center; gap: 9px; color: #e5dfce; font-size: 12px; font-weight: 600; }
+    .progress-mark {
+      display: grid;
+      width: 21px;
+      height: 21px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .45);
+      border-radius: 50%;
+      color: var(--gold);
+      font: 11px Georgia, serif;
+    }
+    #progress-value { color: #e5ce9e; font-size: 17px; font-weight: 700; }
+    .progress-track { height: 6px; margin: 11px 0 9px; overflow: hidden; border-radius: 999px; background: rgba(255, 255, 255, .09); }
+    #progress-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #a9844c, #e1c281); transition: width .25s ease; }
+    .progress-label { color: #9fa79b; font-size: 10px; }
+    #progress-state { color: #d8c495; }
+    #complete-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(7, 12, 10, .58);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s;
+    }
+    #complete-screen.is-visible { opacity: 1; pointer-events: auto; }
+    .complete-card {
+      width: min(420px, 100%);
+      padding: 35px 34px 31px;
+      border: 1px solid rgba(226, 205, 158, .3);
+      border-radius: 20px;
+      background: rgba(26, 35, 31, .96);
+      box-shadow: 0 25px 90px rgba(0, 0, 0, .45);
+      text-align: center;
+      backdrop-filter: blur(18px);
+      transform: translateY(12px) scale(.98);
+      transition: transform .35s;
+    }
+    #complete-screen.is-visible .complete-card { transform: translateY(0) scale(1); }
+    .complete-seal {
+      display: grid;
+      width: 51px;
+      height: 51px;
+      margin: 0 auto 17px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .65);
+      border-radius: 50%;
+      color: #ecd09b;
+      font-size: 22px;
+    }
+    .complete-kicker { margin: 0 0 9px; color: var(--gold); font-size: 10px; font-weight: 700; letter-spacing: .2em; }
+    .complete-card h2 { margin: 0; font: 500 31px "Batang", "Nanum Myeongjo", serif; letter-spacing: -.06em; }
+    .complete-copy { margin: 12px 0 25px; color: #b8bbae; font-size: 12px; line-height: 1.8; }
+    .action-button {
+      min-height: 44px;
+      padding: 0 20px;
+      border: 1px solid rgba(231, 215, 180, .24);
+      border-radius: 9px;
+      background: transparent;
+      color: #ded8c8;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .action-button:hover { border-color: rgba(231, 215, 180, .6); background: rgba(255, 255, 255, .05); }
+    #load-error {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: none;
+      place-items: center;
+      padding: 24px;
+      background: #17211e;
+      color: #f1dfbf;
+      text-align: center;
+    }
+    #load-error.is-visible { display: grid; }
+  </style>
+</head>
+<body>
+  <div id="scene" aria-label="깃털을 화살대에 붙이는 3D 작업대"></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <main id="interface">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">竹</div>
+        <div class="brand-copy"><small>HANDCRAFT WORKSHOP</small><strong>대나무 공방</strong></div>
+      </div>
+      <div class="stage-chip"><b>12</b><span>12단계 · 깃 붙이기</span></div>
+    </header>
+    <section class="intro" aria-live="polite">
+      <p class="eyebrow">STAGE 12 &nbsp; / &nbsp; FLETCHING</p>
+      <h1>깃털 두 개를 붙여<br><em>화살을 완성하세요</em></h1>
+      <p id="instruction">화살대 옆 점선 표시를 따라 깃털을 하나씩 끌어다 놓으세요.</p>
+      <div class="gesture-note"><span class="gesture-mark" aria-hidden="true">↗</span><span>화살대 양옆의 점선 자리에 맞춰 붙입니다</span></div>
+    </section>
+    <section class="bottom-area" aria-live="polite">
+      <div class="progress-card">
+        <div class="progress-head">
+          <div class="progress-title"><span class="progress-mark" aria-hidden="true">Ⅻ</span><span>깃 붙이기</span></div>
+          <strong id="progress-value">0%</strong>
+        </div>
+        <div class="progress-track" role="progressbar" aria-label="깃 붙이기 진행도" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div id="progress-fill"></div>
+        </div>
+        <div class="progress-label"><span id="progress-hint">깃털을 화살대 옆 점선으로 끌어오세요</span><span id="progress-state">0 / 2개</span></div>
+      </div>
+    </section>
+    <section id="complete-screen" aria-modal="true" role="dialog" aria-labelledby="complete-title">
+      <div class="complete-card">
+        <div class="complete-seal" aria-hidden="true">✓</div>
+        <p class="complete-kicker">STAGE 12 COMPLETE</p>
+        <h2 id="complete-title">12단계 완료</h2>
+        <p class="complete-copy">깃털 두 개를 화살대에 붙여 화살을 완성했습니다.</p>
+        <button class="action-button" id="retry-button" type="button">12단계 다시하기</button>
+      </div>
+    </section>
+  </main>
+  <div id="load-error" role="alert">3D 장면을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침해주세요.</div>
+  <script type="module">
+    const errorScreen = document.getElementById("load-error");
+    import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js").then((THREE) => {
+      (() => {
+        "use strict";
+        const host = document.getElementById("scene");
+        const instruction = document.getElementById("instruction");
+        const progressValue = document.getElementById("progress-value");
+        const progressFill = document.getElementById("progress-fill");
+        const progressTrack = document.querySelector(".progress-track");
+        const progressHint = document.getElementById("progress-hint");
+        const progressState = document.getElementById("progress-state");
+        const completionScreen = document.getElementById("complete-screen");
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x17211e);
+        scene.fog = new THREE.Fog(0x17211e, 17, 32);
+        const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 80);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.08;
+        host.appendChild(renderer.domElement);
+
+        scene.add(new THREE.HemisphereLight(0xe4ddc5, 0x263732, 1.7));
+        const keyLight = new THREE.DirectionalLight(0xffd8a0, 3.1);
+        keyLight.position.set(-4.5, 9, 6);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.set(2048, 2048);
+        scene.add(keyLight);
+        const fillLight = new THREE.PointLight(0x8eaa8b, 22, 17, 2);
+        fillLight.position.set(-4, 4, -2);
+        scene.add(fillLight);
+
+        const ground = new THREE.Mesh(
+          new THREE.PlaneGeometry(80, 80),
+          new THREE.MeshStandardMaterial({ color: 0x18231f, roughness: 0.96 })
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.78;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        const tableTop = 0.56;
+        const table = new THREE.Group();
+        scene.add(table);
+        const tableColors = [0x624a32, 0x705238, 0x664a30, 0x76583b, 0x624831];
+        for (let index = 0; index < tableColors.length; index += 1) {
+          const plank = new THREE.Mesh(
+            new THREE.BoxGeometry(9.7, 0.2, 0.97),
+            new THREE.MeshStandardMaterial({ color: tableColors[index], roughness: 0.83 })
+          );
+          plank.position.set(0, 0.46, -1.94 + index * 0.97);
+          plank.receiveShadow = true;
+          table.add(plank);
+        }
+        const legMaterial = new THREE.MeshStandardMaterial({ color: 0x493723, roughness: 0.84 });
+        for (const x of [-4.18, 4.18]) {
+          for (const z of [-2.05, 2.05]) {
+            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.23, 1.15, 0.23), legMaterial);
+            leg.position.set(x, -0.115, z);
+            table.add(leg);
+          }
+        }
+
+        const bambooLength = 3.5;
+        const bambooStart = -bambooLength / 2 + bambooLength / 12;
+        const bambooEnd = bambooLength / 2 - bambooLength / 12;
+        const shaftLength = bambooEnd - bambooStart;
+        const shaftRadius = 0.044;
+        const inkBandWidth = 0.045;
+        const inkCenters = [0.24, shaftLength - 0.24];
+        const nockLength = shaftLength / 10;
+        const arrowScale = 1.5;
+        const arrow = new THREE.Group();
+        arrow.position.set(-1.6, tableTop + 0.08625, -0.35);
+        arrow.quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -Math.PI / 2);
+        arrow.scale.setScalar(arrowScale);
+        scene.add(arrow);
+
+        const bambooMaterial = new THREE.MeshStandardMaterial({ color: 0x8eaa67, roughness: 0.48, metalness: 0.02 });
+        const glueMaterial = new THREE.MeshStandardMaterial({ color: 0x89502d, roughness: 0.72 });
+        const inkMaterial = new THREE.MeshStandardMaterial({ color: 0x12130f, roughness: 0.88 });
+        const threadMaterial = new THREE.MeshStandardMaterial({ color: 0xf3efe4, roughness: 0.68, metalness: 0.02 });
+        const shaft = new THREE.Mesh(
+          new THREE.CylinderGeometry(shaftRadius, shaftRadius, shaftLength, 32, 1),
+          bambooMaterial
+        );
+        shaft.position.y = shaftLength / 2;
+        shaft.castShadow = true;
+        shaft.receiveShadow = true;
+        arrow.add(shaft);
+        const tipEnd = new THREE.Mesh(new THREE.SphereGeometry(shaftRadius, 18, 12), glueMaterial);
+        tipEnd.position.y = 0;
+        tipEnd.castShadow = true;
+        arrow.add(tipEnd);
+        const nockEnd = new THREE.Mesh(new THREE.SphereGeometry(shaftRadius, 18, 12), glueMaterial);
+        nockEnd.position.y = shaftLength;
+        nockEnd.visible = false;
+        arrow.add(nockEnd);
+        const coatingBounds = [
+          [0, inkCenters[0] - inkBandWidth / 2],
+          [inkCenters[1] + inkBandWidth / 2, shaftLength]
+        ];
+        for (const [start, end] of coatingBounds) {
+          const coating = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.045, 0.045, end - start, 32, 1),
+            glueMaterial
+          );
+          coating.position.y = (start + end) / 2;
+          coating.castShadow = true;
+          coating.receiveShadow = true;
+          arrow.add(coating);
+        }
+        for (const y of inkCenters) {
+          const band = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, inkBandWidth, 24), inkMaterial);
+          band.position.y = y;
+          band.castShadow = true;
+          arrow.add(band);
+        }
+        for (const [start, end] of coatingBounds) {
+          const points = [];
+          for (let index = 0; index <= 128; index += 1) {
+            const amount = index / 128;
+            const angle = amount * 4 * Math.PI * 2;
+            points.push(new THREE.Vector3(
+              Math.sin(angle) * 0.0515,
+              start + (end - start) * amount,
+              Math.cos(angle) * 0.0515
+            ));
+          }
+          const thread = new THREE.Mesh(
+            new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 128, 0.006, 8, false),
+            threadMaterial
+          );
+          thread.castShadow = true;
+          thread.receiveShadow = true;
+          arrow.add(thread);
+        }
+
+        const nockGroup = new THREE.Group();
+        const nockCenterY = shaftLength + nockLength / 2 - 0.08;
+        nockGroup.position.y = nockCenterY;
+        arrow.add(nockGroup);
+        const nockMaterial = new THREE.MeshStandardMaterial({ color: 0xd8c18d, roughness: 0.76 });
+        const nockBody = new THREE.Mesh(
+          new THREE.CylinderGeometry(shaftRadius, shaftRadius, nockLength, 28, 1),
+          nockMaterial
+        );
+        nockBody.castShadow = true;
+        nockBody.receiveShadow = true;
+        nockGroup.add(nockBody);
+        const nockGlue = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.045, 0.045, nockLength / 2, 24, 1),
+          glueMaterial
+        );
+        nockGlue.position.y = -nockLength / 4;
+        nockGlue.castShadow = true;
+        nockGroup.add(nockGlue);
+        const notchVertices = [];
+        const notchIndices = [];
+        const notchColumns = 12;
+        const notchRows = 12;
+        for (let row = 0; row <= notchRows; row += 1) {
+          const y = nockLength / 2 - 0.095 * row / notchRows;
+          for (let column = 0; column <= notchColumns; column += 1) {
+            const x = -0.025 + 0.05 * column / notchColumns;
+            const z = Math.sqrt(Math.max(0, shaftRadius * shaftRadius - x * x)) + 0.001;
+            notchVertices.push(x, y, z);
+          }
+        }
+        for (let row = 0; row < notchRows; row += 1) {
+          for (let column = 0; column < notchColumns; column += 1) {
+            const a = row * (notchColumns + 1) + column;
+            const b = a + notchColumns + 1;
+            notchIndices.push(a, b, a + 1, b, b + 1, a + 1);
+          }
+        }
+        const notchGeometry = new THREE.BufferGeometry();
+        notchGeometry.setAttribute("position", new THREE.Float32BufferAttribute(notchVertices, 3));
+        notchGeometry.setIndex(notchIndices);
+        notchGeometry.computeVertexNormals();
+        const notch = new THREE.Mesh(
+          notchGeometry,
+          new THREE.MeshStandardMaterial({ color: 0x34251a, roughness: 0.95, side: THREE.DoubleSide })
+        );
+        nockGroup.add(notch);
+
+        const droppedHeadPosition = 0.005;
+        const hitStep = 0.01;
+        const requiredHits = 5;
+        const fittedHeadPosition = droppedHeadPosition + hitStep * requiredHits;
+        const headRadius = shaftRadius * 1.16;
+        const arrowheadLength = 0.34;
+        const headProfile = [
+          new THREE.Vector2(0, -arrowheadLength),
+          new THREE.Vector2(0.009, -arrowheadLength + 0.012),
+          new THREE.Vector2(0.0225, -0.29),
+          new THREE.Vector2(0.0355, -0.235),
+          new THREE.Vector2(headRadius * 0.82, -0.17),
+          new THREE.Vector2(headRadius, -0.025),
+          new THREE.Vector2(headRadius * 0.94, 0),
+          new THREE.Vector2(0, 0)
+        ];
+        const arrowHead = new THREE.Group();
+        arrowHead.position.set(0, fittedHeadPosition, 0);
+        arrow.add(arrowHead);
+        const headMesh = new THREE.Mesh(
+          new THREE.LatheGeometry(headProfile, 32),
+          new THREE.MeshStandardMaterial({ color: 0x718082, roughness: 0.27, metalness: 0.82 })
+        );
+        headMesh.castShadow = true;
+        headMesh.receiveShadow = true;
+        arrowHead.add(headMesh);
+        tipEnd.visible = false;
+
+        const featherLength = 1.15;
+        const featherHalfLength = featherLength / 2;
+        const featherHalfWidth = 0.22;
+        const featherScale = 1.1;
+        const targetY = shaftLength - featherHalfLength - 0.02;
+        const arrowFeatherOrientation = new THREE.Quaternion()
+          .setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+        const looseFeatherOrientation = arrow.quaternion.clone().multiply(arrowFeatherOrientation);
+        const vaneMaterial = new THREE.MeshStandardMaterial({
+          color: 0xc5b58f,
+          roughness: 0.82,
+          side: THREE.DoubleSide
+        });
+        const barbMaterials = [
+          new THREE.MeshStandardMaterial({ color: 0xe2d6b8, roughness: 0.8 }),
+          new THREE.MeshStandardMaterial({ color: 0xb5a37b, roughness: 0.84 })
+        ];
+        const guideBySide = new Map();
+        for (const side of [-1, 1]) {
+          const guideZ = -side * shaftRadius * 1.65;
+          const guide = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([
+              new THREE.Vector3(0, targetY - featherHalfLength, guideZ),
+              new THREE.Vector3(0, targetY + featherHalfLength, guideZ)
+            ]),
+            new THREE.LineDashedMaterial({
+              color: 0xe2c37c,
+              dashSize: 0.055,
+              gapSize: 0.045,
+              transparent: true,
+              opacity: 0.9
+            })
+          );
+          guide.computeLineDistances();
+          arrow.add(guide);
+          guideBySide.set(side, guide);
+        }
+
+        function createFeather(side) {
+          const group = new THREE.Group();
+          const shape = new THREE.Shape();
+          shape.moveTo(0, -featherHalfLength);
+          shape.lineTo(side * featherHalfWidth * 0.32, -featherHalfLength + 0.1);
+          shape.quadraticCurveTo(
+            side * featherHalfWidth * 0.94,
+            -featherHalfLength * 0.34,
+            side * featherHalfWidth,
+            0
+          );
+          shape.quadraticCurveTo(
+            side * featherHalfWidth * 0.9,
+            featherHalfLength * 0.48,
+            side * featherHalfWidth * 0.68,
+            featherHalfLength * 0.78
+          );
+          shape.lineTo(side * featherHalfWidth * 0.52, featherHalfLength);
+          shape.lineTo(side * featherHalfWidth * 0.38, featherHalfLength - 0.08);
+          shape.lineTo(side * featherHalfWidth * 0.23, featherHalfLength);
+          shape.lineTo(0, featherHalfLength - 0.04);
+          shape.lineTo(0, -featherHalfLength);
+          const vane = new THREE.Mesh(
+            new THREE.ExtrudeGeometry(shape, {
+              depth: 0.009,
+              bevelEnabled: true,
+              bevelSegments: 1,
+              bevelSize: 0.003,
+              bevelThickness: 0.002
+            }),
+            vaneMaterial
+          );
+          vane.position.z = -0.009;
+          vane.castShadow = true;
+          vane.receiveShadow = true;
+          group.add(vane);
+
+          for (let row = 0; row < 20; row += 1) {
+            const amount = (row + 0.5) / 20;
+            const y = -featherHalfLength + featherLength * amount;
+            const width = featherHalfWidth * Math.pow(Math.sin(Math.PI * amount), 0.82);
+            const direction = new THREE.Vector3(side * width, 0.075, 0);
+            const barb = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.00075, 0.0025, direction.length(), 5),
+              barbMaterials[(row + (side > 0 ? 1 : 0)) % barbMaterials.length]
+            );
+            barb.position.set(direction.x / 2, y + direction.y / 2, 0.011);
+            barb.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+            barb.castShadow = true;
+            group.add(barb);
+          }
+
+          return group;
+        }
+
+        const loosePositions = [
+          new THREE.Vector3(0.1, tableTop + 0.13, 1.15),
+          new THREE.Vector3(0.8, tableTop + 0.13, 2.0)
+        ];
+        const feathers = [-1, 1].map((side, index) => {
+          const group = createFeather(side);
+          group.position.copy(loosePositions[index]);
+          group.quaternion.copy(looseFeatherOrientation);
+          group.scale.setScalar(featherScale);
+          group.userData.attached = false;
+          scene.add(group);
+          return { group, side, startPosition: loosePositions[index].clone(), guide: guideBySide.get(side), attached: false };
+        });
+
+        const cameraTarget = new THREE.Vector3(0, 0.92, 0.05);
+        camera.position.set(0, 4.8, 8.9);
+        camera.lookAt(cameraTarget);
+        const pointer = new THREE.Vector2();
+        const raycaster = new THREE.Raycaster();
+        const pointerWorld = new THREE.Vector3();
+        const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(tableTop + 0.13));
+        const dragOffset = new THREE.Vector3();
+        let phase = "ready";
+        let activeFeather = null;
+        let attachedCount = 0;
+
+        function resize() {
+          const width = Math.max(1, host.clientWidth);
+          const height = Math.max(1, host.clientHeight);
+          camera.aspect = width / height;
+          camera.updateProjectionMatrix();
+          renderer.setSize(width, height, false);
+        }
+
+        function updateProgress() {
+          const percent = Math.round(attachedCount / feathers.length * 100);
+          progressValue.textContent = `${percent}%`;
+          progressFill.style.width = `${percent}%`;
+          progressTrack.setAttribute("aria-valuenow", String(percent));
+          if (phase === "complete") {
+            instruction.textContent = "두 깃털이 화살대에 붙어 화살이 완성되었습니다.";
+            progressHint.textContent = "화살 완성";
+            progressState.textContent = "완료";
+          } else if (phase === "dragging") {
+            instruction.textContent = "화살대 옆 점선에 깃털을 놓으세요.";
+            progressHint.textContent = "깃털을 화살에 붙이는 중";
+            progressState.textContent = `${attachedCount} / 2개`;
+          } else {
+            instruction.textContent = attachedCount === 0
+              ? "화살대 옆 점선 표시를 따라 깃털을 하나씩 끌어다 놓으세요."
+              : "남은 깃털을 반대쪽 점선 자리에 끌어다 놓으세요.";
+            progressHint.textContent = attachedCount === 0
+              ? "깃털을 화살대 옆 점선으로 끌어오세요"
+              : "깃털 하나가 붙었습니다. 반대쪽 점선에 하나 더 붙이세요";
+            progressState.textContent = `${attachedCount} / 2개`;
+          }
+        }
+
+        function updatePointer(event) {
+          const rect = renderer.domElement.getBoundingClientRect();
+          pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+          pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+          camera.updateMatrixWorld(true);
+          scene.updateMatrixWorld(true);
+          raycaster.setFromCamera(pointer, camera);
+        }
+
+        function getPlanePoint() {
+          if (!raycaster.ray.intersectPlane(dragPlane, pointerWorld)) return null;
+          return pointerWorld.clone();
+        }
+
+        function getTargetLocalPosition(side) {
+          return new THREE.Vector3(0, targetY, -side * shaftRadius);
+        }
+
+        function isOverAttachmentTarget(feather) {
+          arrow.updateMatrixWorld(true);
+          const targetWorld = arrow.localToWorld(getTargetLocalPosition(feather.side));
+          const targetScreen = targetWorld.project(camera);
+          const rect = renderer.domElement.getBoundingClientRect();
+          const dx = (pointer.x - targetScreen.x) * rect.width / 2;
+          const dy = (pointer.y - targetScreen.y) * rect.height / 2;
+          return Math.hypot(dx, dy) <= 115;
+        }
+
+        function attachFeather(feather) {
+          scene.remove(feather.group);
+          arrow.add(feather.group);
+          feather.group.position.copy(getTargetLocalPosition(feather.side));
+          feather.group.quaternion.copy(arrowFeatherOrientation);
+          feather.group.scale.setScalar(featherScale / arrowScale);
+          feather.group.userData.attached = true;
+          feather.attached = true;
+          feather.guide.visible = false;
+          attachedCount += 1;
+          if (attachedCount === feathers.length) {
+            phase = "complete";
+            completionScreen.classList.add("is-visible");
+          } else {
+            phase = "ready";
+          }
+          updateProgress();
+        }
+
+        function finishDrag(event) {
+          if (!activeFeather) return;
+          updatePointer(event);
+          if (isOverAttachmentTarget(activeFeather)) attachFeather(activeFeather);
+          else {
+            phase = "ready";
+            updateProgress();
+          }
+          if (renderer.domElement.hasPointerCapture(event.pointerId)) {
+            renderer.domElement.releasePointerCapture(event.pointerId);
+          }
+          activeFeather = null;
+          renderer.domElement.style.cursor = "default";
+        }
+
+        function resetStage() {
+          phase = "ready";
+          activeFeather = null;
+          attachedCount = 0;
+          for (const feather of feathers) {
+            if (feather.group.parent !== scene) {
+              feather.group.parent.remove(feather.group);
+              scene.add(feather.group);
+            }
+            feather.group.position.copy(feather.startPosition);
+            feather.group.quaternion.copy(looseFeatherOrientation);
+            feather.group.scale.setScalar(featherScale);
+            feather.group.userData.attached = false;
+            feather.attached = false;
+            feather.guide.visible = true;
+          }
+          completionScreen.classList.remove("is-visible");
+          renderer.domElement.style.cursor = "default";
+          updateProgress();
+        }
+
+        renderer.domElement.addEventListener("pointerdown", (event) => {
+          if (event.button !== 0 || phase === "complete") return;
+          updatePointer(event);
+          for (const feather of feathers) {
+            if (feather.attached) continue;
+            if (!raycaster.intersectObject(feather.group, true).length) continue;
+            const point = getPlanePoint();
+            if (!point) return;
+            activeFeather = feather;
+            dragOffset.subVectors(feather.group.position, point);
+            phase = "dragging";
+            renderer.domElement.setPointerCapture(event.pointerId);
+            renderer.domElement.style.cursor = "grabbing";
+            updateProgress();
+            event.preventDefault();
+            return;
+          }
+        });
+
+        renderer.domElement.addEventListener("pointermove", (event) => {
+          updatePointer(event);
+          if (activeFeather && phase === "dragging") {
+            const point = getPlanePoint();
+            if (point) {
+              activeFeather.group.position.x = point.x + dragOffset.x;
+              activeFeather.group.position.z = point.z + dragOffset.z;
+            }
+            renderer.domElement.style.cursor = "grabbing";
+            event.preventDefault();
+            return;
+          }
+          const hovered = feathers.some((feather) =>
+            !feather.attached && raycaster.intersectObject(feather.group, true).length > 0
+          );
+          renderer.domElement.style.cursor = hovered ? "grab" : "default";
+        });
+
+        renderer.domElement.addEventListener("pointerup", finishDrag);
+        renderer.domElement.addEventListener("pointercancel", finishDrag);
+        document.getElementById("retry-button").addEventListener("click", resetStage);
+        window.addEventListener("resize", resize);
+        resize();
+        updateProgress();
+        renderer.setAnimationLoop(() => renderer.render(scene, camera));
+      })();
+    }).catch((error) => {
+      console.error("Three.js failed to load; the feather-attachment stage could not start.", error);
+      errorScreen.classList.add("is-visible");
+    });
+  </script>
+</body>
+</html>
