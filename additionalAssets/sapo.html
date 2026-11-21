@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>sapo · 사포 에셋</title> //2단계에 사용
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #eee8dc;
+      --muted: #a7aaa2;
+      --gold: #d7ad6c;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #17211e;
+      color: var(--ink);
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    }
+
+    #scene { position: fixed; inset: 0; }
+    #scene canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(13, 20, 18, .64), transparent 54%),
+        linear-gradient(0deg, rgba(11, 17, 15, .55), transparent 34%, rgba(11, 17, 15, .18));
+    }
+
+    header {
+      position: fixed;
+      top: 28px;
+      left: clamp(24px, 5vw, 72px);
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .mark {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .65);
+      border-radius: 50%;
+      color: var(--gold);
+      font: 18px Georgia, serif;
+    }
+
+    .heading { display: grid; gap: 4px; }
+    .heading small { color: var(--gold); font-size: 9px; font-weight: 700; letter-spacing: .22em; }
+    .heading strong { font-size: 14px; font-weight: 600; letter-spacing: .06em; }
+
+    .caption {
+      position: fixed;
+      bottom: 34px;
+      left: clamp(24px, 5vw, 72px);
+    }
+
+    .caption p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .04em;
+    }
+
+    .caption h1 {
+      margin: 0 0 8px;
+      font: 500 clamp(29px, 4vw, 43px) "Batang", "Nanum Myeongjo", serif;
+      letter-spacing: -.07em;
+    }
+
+    .caption .dimensions { margin-top: 7px; color: #c4a878; }
+
+    .controls {
+      position: fixed;
+      right: clamp(20px, 4vw, 56px);
+      bottom: 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: #b6b9b0;
+      font-size: 10px;
+    }
+
+    button {
+      min-height: 36px;
+      padding: 0 13px;
+      border: 1px solid rgba(232, 214, 174, .23);
+      border-radius: 8px;
+      background: rgba(25, 34, 31, .75);
+      color: var(--ink);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:hover { border-color: rgba(215, 173, 108, .7); }
+
+    #load-error {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 24px;
+      background: #17211e;
+      color: #f1dfbf;
+      text-align: center;
+    }
+
+    #load-error.is-visible { display: grid; }
+
+    @media (max-width: 620px) {
+      header { top: 18px; left: 20px; }
+      .caption { bottom: 92px; left: 22px; right: 22px; }
+      .caption p { max-width: 420px; line-height: 1.6; }
+      .controls { right: 20px; bottom: 21px; left: 22px; justify-content: space-between; }
+      .controls span { font-size: 9px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="scene" aria-label="회전해 앞면과 뒷면을 살펴볼 수 있는 sapo 3D 에셋"></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <header>
+    <div class="mark" aria-hidden="true">砂</div>
+    <div class="heading"><small>HANDCRAFT WORKSHOP / ASSET</small><strong>sapo</strong></div>
+  </header>
+  <section class="caption">
+    <h1>대나무용 사포</h1>
+    <p>연갈색 종이 앞면과 짙은 회색 연마 입자가 돋은 뒷면을 구성했습니다.</p>
+    <p class="dimensions" id="dimensions"></p>
+  </section>
+  <div class="controls">
+    <span>드래그하여 앞·뒷면 회전 · 휠로 확대</span>
+    <button id="reset-view" type="button">시점 초기화</button>
+  </div>
+  <div id="load-error" role="alert">3D 에셋을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 페이지를 새로고침해주세요.</div>
+
+  <script type="module">
+    const errorScreen = document.getElementById("load-error");
+    import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js").then((THREE) => {
+      const host = document.getElementById("scene");
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x17211e);
+      scene.fog = new THREE.Fog(0x17211e, 12, 24);
+
+      const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 60);
+      const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.08;
+      host.appendChild(renderer.domElement);
+
+      scene.add(new THREE.HemisphereLight(0xe4ddc5, 0x263732, 1.9));
+      const keyLight = new THREE.DirectionalLight(0xffd8a0, 3.2);
+      keyLight.position.set(-4.5, 7, 5);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.set(2048, 2048);
+      keyLight.shadow.camera.left = -2;
+      keyLight.shadow.camera.right = 2;
+      keyLight.shadow.camera.top = 2;
+      keyLight.shadow.camera.bottom = -2;
+      keyLight.shadow.bias = -0.00025;
+      scene.add(keyLight);
+
+      const fillLight = new THREE.PointLight(0x8eaa8b, 12, 12, 2);
+      fillLight.position.set(-3.5, 2.5, -2);
+      scene.add(fillLight);
+      const edgeLight = new THREE.DirectionalLight(0xc8d1c2, 1.4);
+      edgeLight.position.set(3, -2, -4);
+      scene.add(edgeLight);
+      const gritLight = new THREE.DirectionalLight(0xffd8a0, 2.2);
+      gritLight.position.set(4, 5, -4);
+      scene.add(gritLight);
+
+      const backdrop = new THREE.Mesh(
+        new THREE.PlaneGeometry(80, 80),
+        new THREE.MeshStandardMaterial({ color: 0x202923, roughness: 0.96 })
+      );
+      backdrop.position.z = -0.8;
+      scene.add(backdrop);
+
+      const bambooRadius = 0.044;
+      const sapoWidth = 0.96;
+      const sapoHeight = 2 * Math.PI * bambooRadius;
+      const bodyThickness = 0.014;
+      document.getElementById("dimensions").textContent =
+        `세로 ${sapoHeight.toFixed(3)} · 2πr (대나무 반지름 r = ${bambooRadius.toFixed(3)})`;
+
+      let seed = 39271;
+      function random() {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      }
+
+      function roundedRectangle(width, height, radius) {
+        const halfWidth = width / 2;
+        const halfHeight = height / 2;
+        const shape = new THREE.Shape();
+        shape.moveTo(-halfWidth + radius, -halfHeight);
+        shape.lineTo(halfWidth - radius, -halfHeight);
+        shape.quadraticCurveTo(halfWidth, -halfHeight, halfWidth, -halfHeight + radius);
+        shape.lineTo(halfWidth, halfHeight - radius);
+        shape.quadraticCurveTo(halfWidth, halfHeight, halfWidth - radius, halfHeight);
+        shape.lineTo(-halfWidth + radius, halfHeight);
+        shape.quadraticCurveTo(-halfWidth, halfHeight, -halfWidth, halfHeight - radius);
+        shape.lineTo(-halfWidth, -halfHeight + radius);
+        shape.quadraticCurveTo(-halfWidth, -halfHeight, -halfWidth + radius, -halfHeight);
+        return shape;
+      }
+
+      function makePaperTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 256;
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        for (let index = 0; index < 280; index += 1) {
+          const shade = random() > 0.5 ? 105 : 245;
+          context.strokeStyle = `rgba(${shade}, ${shade - 8}, ${shade - 18}, ${0.025 + random() * 0.035})`;
+          context.lineWidth = 0.35 + random() * 0.65;
+          const x = random() * canvas.width;
+          const y = random() * canvas.height;
+          context.beginPath();
+          context.moveTo(x, y);
+          context.lineTo(x + 2 + random() * 18, y + (random() - 0.5) * 2);
+          context.stroke();
+        }
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        return texture;
+      }
+
+      const asset = new THREE.Group();
+      scene.add(asset);
+
+      const substrate = new THREE.Mesh(
+        new THREE.ExtrudeGeometry(roundedRectangle(sapoWidth, sapoHeight, 0.018), {
+          depth: bodyThickness,
+          bevelEnabled: false,
+          curveSegments: 4
+        }),
+        new THREE.MeshStandardMaterial({ color: 0x715338, roughness: 0.96 })
+      );
+      substrate.geometry.translate(0, 0, -bodyThickness / 2);
+      substrate.castShadow = true;
+      substrate.receiveShadow = true;
+      asset.add(substrate);
+
+      const faceWidth = sapoWidth - 0.014;
+      const faceHeight = sapoHeight - 0.012;
+      const paperShape = roundedRectangle(faceWidth, faceHeight, 0.014);
+      const frontFace = new THREE.Mesh(
+        new THREE.ShapeGeometry(paperShape, 4),
+        new THREE.MeshStandardMaterial({
+          color: 0xa77b4e,
+          map: makePaperTexture(),
+          roughness: 0.94,
+          metalness: 0
+        })
+      );
+      frontFace.position.z = bodyThickness / 2 + 0.0008;
+      frontFace.castShadow = true;
+      frontFace.receiveShadow = true;
+      asset.add(frontFace);
+
+      const backFace = new THREE.Mesh(
+        new THREE.ShapeGeometry(roundedRectangle(faceWidth, faceHeight, 0.014), 4),
+        new THREE.MeshStandardMaterial({
+          color: 0x4b4e4d,
+          roughness: 0.98,
+          metalness: 0,
+          side: THREE.DoubleSide
+        })
+      );
+      backFace.position.z = -bodyThickness / 2 - 0.0008;
+      backFace.rotation.y = Math.PI;
+      backFace.receiveShadow = true;
+      asset.add(backFace);
+
+      const gritGeometry = new THREE.IcosahedronGeometry(1, 0);
+      const gritMaterials = [
+        new THREE.MeshStandardMaterial({ color: 0x242626, roughness: 0.86 }),
+        new THREE.MeshStandardMaterial({ color: 0x303232, roughness: 0.9 }),
+        new THREE.MeshStandardMaterial({ color: 0x3a3c3b, roughness: 0.88 })
+      ];
+      const backZ = backFace.position.z;
+      const columns = 20;
+      const rows = 8;
+      const gritWidth = faceWidth - 0.035;
+      const gritHeight = faceHeight - 0.024;
+      for (let row = 0; row < rows; row += 1) {
+        for (let column = 0; column < columns; column += 1) {
+          const cellWidth = gritWidth / columns;
+          const cellHeight = gritHeight / rows;
+          const x = -gritWidth / 2 + (column + 0.5 + (random() - 0.5) * 0.46) * cellWidth;
+          const y = -gritHeight / 2 + (row + 0.5 + (random() - 0.5) * 0.42) * cellHeight;
+          const bumpDepth = 0.008 + random() * 0.004;
+          const bump = new THREE.Mesh(
+            gritGeometry,
+            gritMaterials[Math.floor(random() * gritMaterials.length)]
+          );
+          bump.position.set(x, y, backZ - bumpDepth * 0.35);
+          bump.rotation.set(random() * Math.PI, random() * Math.PI, random() * Math.PI);
+          bump.scale.set(
+            0.007 + random() * 0.006,
+            0.006 + random() * 0.004,
+            bumpDepth
+          );
+          bump.castShadow = true;
+          bump.receiveShadow = true;
+          asset.add(bump);
+        }
+      }
+
+      const initialRotation = new THREE.Euler(0, 0, 0);
+      let isDragging = false;
+      let previousPointerX = 0;
+      let previousPointerY = 0;
+
+      function resize() {
+        const width = host.clientWidth;
+        const height = host.clientHeight;
+        camera.aspect = width / height;
+        const narrowViewport = width / height < 0.75;
+        const mobileDistance = sapoWidth / (
+          2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect
+        ) * 1.15;
+        camera.position.set(
+          narrowViewport ? 0 : 0.16,
+          0.2,
+          narrowViewport ? Math.max(3.1, mobileDistance) : 2.35
+        );
+        camera.lookAt(0, 0, 0);
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height, false);
+      }
+
+      renderer.domElement.addEventListener("pointerdown", (event) => {
+        isDragging = true;
+        previousPointerX = event.clientX;
+        previousPointerY = event.clientY;
+        renderer.domElement.setPointerCapture(event.pointerId);
+      });
+      renderer.domElement.addEventListener("pointermove", (event) => {
+        if (!isDragging) return;
+        asset.rotation.y += (event.clientX - previousPointerX) * 0.008;
+        asset.rotation.x += (event.clientY - previousPointerY) * 0.006;
+        previousPointerX = event.clientX;
+        previousPointerY = event.clientY;
+      });
+      function endDrag(event) {
+        isDragging = false;
+        if (renderer.domElement.hasPointerCapture(event.pointerId)) {
+          renderer.domElement.releasePointerCapture(event.pointerId);
+        }
+      }
+      renderer.domElement.addEventListener("pointerup", endDrag);
+      renderer.domElement.addEventListener("pointercancel", endDrag);
+      renderer.domElement.addEventListener("lostpointercapture", () => {
+        isDragging = false;
+      });
+      renderer.domElement.addEventListener("wheel", (event) => {
+        event.preventDefault();
+        camera.position.z = THREE.MathUtils.clamp(camera.position.z + event.deltaY * 0.004, 1.4, 6);
+        camera.lookAt(0, 0, 0);
+      }, { passive: false });
+      document.getElementById("reset-view").addEventListener("click", () => {
+        asset.rotation.copy(initialRotation);
+        resize();
+      });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+      animate();
+    }).catch(() => {
+      errorScreen.classList.add("is-visible");
+    });
+  </script>
+</body>
+</html>

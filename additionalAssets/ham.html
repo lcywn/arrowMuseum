@@ -1,0 +1,436 @@
+
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HAM · 금속 에셋</title> //제대로 구현안됨 이후 수정필요
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #eee8dc;
+      --muted: #a7aaa2;
+      --gold: #d7ad6c;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #17211e;
+      color: var(--ink);
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    }
+
+    #scene { position: fixed; inset: 0; }
+    #scene canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(13, 20, 18, .64), transparent 54%),
+        linear-gradient(0deg, rgba(11, 17, 15, .55), transparent 34%, rgba(11, 17, 15, .18));
+    }
+
+    header {
+      position: fixed;
+      top: 28px;
+      left: clamp(24px, 5vw, 72px);
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .mark {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .65);
+      border-radius: 50%;
+      color: var(--gold);
+      font: 18px Georgia, serif;
+    }
+
+    .heading { display: grid; gap: 4px; }
+    .heading small { color: var(--gold); font-size: 9px; font-weight: 700; letter-spacing: .22em; }
+    .heading strong { font-size: 14px; font-weight: 600; letter-spacing: .06em; }
+
+    .caption {
+      position: fixed;
+      bottom: 34px;
+      left: clamp(24px, 5vw, 72px);
+    }
+
+    .caption p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .04em;
+    }
+
+    .caption h1 {
+      margin: 0 0 8px;
+      font: 500 clamp(29px, 4vw, 43px) "Batang", "Nanum Myeongjo", serif;
+      letter-spacing: -.07em;
+    }
+
+    .controls {
+      position: fixed;
+      right: clamp(20px, 4vw, 56px);
+      bottom: 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: #b6b9b0;
+      font-size: 10px;
+    }
+
+    button {
+      min-height: 36px;
+      padding: 0 13px;
+      border: 1px solid rgba(232, 214, 174, .23);
+      border-radius: 8px;
+      background: rgba(25, 34, 31, .75);
+      color: var(--ink);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:hover { border-color: rgba(215, 173, 108, .7); }
+
+    #load-error {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 24px;
+      background: #17211e;
+      color: #f1dfbf;
+      text-align: center;
+    }
+
+    #load-error.is-visible { display: grid; }
+
+    @media (max-width: 620px) {
+      header { top: 18px; left: 20px; }
+      .caption { bottom: 92px; left: 22px; }
+      .controls { right: 20px; bottom: 21px; left: 22px; justify-content: space-between; }
+      .controls span { font-size: 9px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="scene" aria-label="회전해 살펴볼 수 있는 HAM 3D 에셋"></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <header>
+    <div class="mark" aria-hidden="true">H</div>
+    <div class="heading"><small>HANDCRAFT WORKSHOP / ASSET</small><strong>HAM</strong></div>
+  </header>
+  <section class="caption">
+    <h1>금속 작업 도구</h1>
+    <p>개구형 스패너 헤드와 반대편 가죽 손잡이를 표현했습니다.</p>
+  </section>
+  <div class="controls">
+    <span>드래그하여 회전 · 휠로 확대</span>
+    <button id="reset-view" type="button">시점 초기화</button>
+  </div>
+  <div id="load-error" role="alert">3D 에셋을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 페이지를 새로고침해주세요.</div>
+
+  <script type="module">
+    const errorScreen = document.getElementById("load-error");
+    import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js").then((THREE) => {
+      const host = document.getElementById("scene");
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x17211e);
+      scene.fog = new THREE.Fog(0x17211e, 12, 24);
+
+      const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 60);
+      const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.08;
+      host.appendChild(renderer.domElement);
+
+      scene.add(new THREE.HemisphereLight(0xe4ddc5, 0x263732, 1.9));
+      const keyLight = new THREE.DirectionalLight(0xffd8a0, 3.4);
+      keyLight.position.set(-4.5, 8, 6);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.set(2048, 2048);
+      keyLight.shadow.camera.left = -4;
+      keyLight.shadow.camera.right = 4;
+      keyLight.shadow.camera.top = 5;
+      keyLight.shadow.camera.bottom = -4;
+      keyLight.shadow.bias = -0.00025;
+      scene.add(keyLight);
+
+      const fillLight = new THREE.PointLight(0x8eaa8b, 16, 12, 2);
+      fillLight.position.set(-3.5, 3, -2);
+      scene.add(fillLight);
+      const metalHighlight = new THREE.DirectionalLight(0xc8d1d2, 3.2);
+      metalHighlight.position.set(4, 4, 5);
+      scene.add(metalHighlight);
+
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(60, 60),
+        new THREE.MeshStandardMaterial({ color: 0x18231f, roughness: 0.96 })
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = -0.025;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      let seed = 85431;
+      function random() {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      }
+
+      function makeMetalTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 256;
+        canvas.height = 512;
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#e1dbd1";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        for (let index = 0; index < 120; index += 1) {
+          const x = random() * canvas.width;
+          const shade = random() > .5 ? 105 : 238;
+          context.strokeStyle = `rgba(${shade}, ${shade - 3}, ${shade - 8}, ${.018 + random() * .035})`;
+          context.lineWidth = .35 + random() * .6;
+          context.beginPath();
+          context.moveTo(x, 0);
+          for (let y = 0; y <= canvas.height; y += 20) {
+            context.lineTo(x + Math.sin(y * .018) * (1 + random()), y);
+          }
+          context.stroke();
+        }
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(1, 1.25);
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        return texture;
+      }
+
+      function makeLeatherTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 256;
+        canvas.height = 256;
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#ddd3c8";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        for (let index = 0; index < 500; index += 1) {
+          const shade = random() > .5 ? 75 : 230;
+          context.fillStyle = `rgba(${shade}, ${shade - 12}, ${shade - 22}, ${.025 + random() * .045})`;
+          context.beginPath();
+          context.arc(random() * canvas.width, random() * canvas.height, .5 + random() * 1.2, 0, Math.PI * 2);
+          context.fill();
+        }
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(2, 3);
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        return texture;
+      }
+
+      const metalTexture = makeMetalTexture();
+      const leatherTexture = makeLeatherTexture();
+      const metalMaterial = new THREE.MeshStandardMaterial({
+        color: 0x665d4f,
+        map: metalTexture,
+        bumpMap: metalTexture,
+        bumpScale: 0.006,
+        roughness: 0.42,
+        metalness: 0.58
+      });
+      const metalEdgeMaterial = new THREE.MeshStandardMaterial({
+        color: 0x302a23,
+        map: metalTexture,
+        bumpMap: metalTexture,
+        bumpScale: 0.004,
+        roughness: 0.62,
+        metalness: 0.78
+      });
+      const leatherMaterial = new THREE.MeshStandardMaterial({
+        color: 0x30231b,
+        map: leatherTexture,
+        bumpMap: leatherTexture,
+        bumpScale: 0.012,
+        roughness: 0.94,
+        metalness: 0
+      });
+      const leatherBandMaterial = new THREE.MeshStandardMaterial({
+        color: 0x49362b,
+        roughness: 0.9,
+        metalness: 0
+      });
+
+      const silhouette = new THREE.Shape();
+      silhouette.moveTo(-0.14, 1.58);
+      silhouette.quadraticCurveTo(-0.18, 1.58, -0.18, 1.53);
+      silhouette.lineTo(-0.18, -0.66);
+      silhouette.quadraticCurveTo(-0.18, -0.77, -0.28, -0.81);
+      silhouette.quadraticCurveTo(-0.45, -0.9, -0.47, -1.17);
+      silhouette.quadraticCurveTo(-0.49, -1.38, -0.34, -1.52);
+      silhouette.quadraticCurveTo(-0.29, -1.56, -0.25, -1.5);
+      silhouette.quadraticCurveTo(-0.21, -1.4, -0.16, -1.3);
+      silhouette.quadraticCurveTo(0, -1.08, 0.16, -1.3);
+      silhouette.quadraticCurveTo(0.21, -1.4, 0.25, -1.5);
+      silhouette.quadraticCurveTo(0.29, -1.56, 0.34, -1.52);
+      silhouette.quadraticCurveTo(0.49, -1.38, 0.47, -1.17);
+      silhouette.quadraticCurveTo(0.45, -0.9, 0.28, -0.81);
+      silhouette.quadraticCurveTo(0.18, -0.77, 0.18, -0.66);
+      silhouette.lineTo(0.18, 1.53);
+      silhouette.quadraticCurveTo(0.18, 1.58, 0.14, 1.58);
+      silhouette.closePath();
+
+      const geometry = new THREE.ExtrudeGeometry(silhouette, {
+        depth: 0.2,
+        bevelEnabled: true,
+        bevelSegments: 2,
+        steps: 1,
+        bevelSize: 0.03,
+        bevelThickness: 0.03,
+        curveSegments: 3
+      });
+      geometry.translate(0, 0, -0.1);
+      geometry.computeVertexNormals();
+
+      const tool = new THREE.Group();
+      const body = new THREE.Mesh(geometry, [metalMaterial, metalEdgeMaterial]);
+      body.castShadow = true;
+      body.receiveShadow = true;
+      tool.add(body);
+
+      const leatherShape = new THREE.Shape();
+      leatherShape.moveTo(-0.19, -0.38);
+      leatherShape.quadraticCurveTo(-0.24, -0.38, -0.24, -0.33);
+      leatherShape.lineTo(-0.24, 0.33);
+      leatherShape.quadraticCurveTo(-0.24, 0.38, -0.19, 0.38);
+      leatherShape.lineTo(0.19, 0.38);
+      leatherShape.quadraticCurveTo(0.24, 0.38, 0.24, 0.33);
+      leatherShape.lineTo(0.24, -0.33);
+      leatherShape.quadraticCurveTo(0.24, -0.38, 0.19, -0.38);
+      leatherShape.closePath();
+      const leatherGeometry = new THREE.ExtrudeGeometry(leatherShape, {
+        depth: 0.34,
+        bevelEnabled: true,
+        bevelSegments: 2,
+        steps: 1,
+        bevelSize: 0.018,
+        bevelThickness: 0.018,
+        curveSegments: 3
+      });
+      leatherGeometry.translate(0, 0, -0.17);
+      const leatherGrip = new THREE.Mesh(leatherGeometry, leatherMaterial);
+      leatherGrip.position.y = 1.12;
+      leatherGrip.castShadow = true;
+      leatherGrip.receiveShadow = true;
+      tool.add(leatherGrip);
+
+      for (const y of [0.79, 0.95, 1.11, 1.27, 1.43]) {
+        const wrap = new THREE.Mesh(
+          new THREE.BoxGeometry(0.5, 0.022, 0.36),
+          leatherBandMaterial
+        );
+        wrap.position.set(0, y, 0);
+        wrap.castShadow = true;
+        tool.add(wrap);
+      }
+
+      tool.position.y = 1.72;
+      tool.rotation.z = -0.16;
+      tool.rotation.y = 0.24;
+      scene.add(tool);
+
+      const target = new THREE.Vector3(0, 1.55, 0);
+      const initialAzimuth = -0.64;
+      const initialPolar = 1.18;
+      const initialDistance = 6.7;
+      let azimuth = initialAzimuth;
+      let polar = initialPolar;
+      let distance = initialDistance;
+      let dragPointer = null;
+      let lastX = 0;
+      let lastY = 0;
+
+      function updateCamera() {
+        camera.position.set(
+          target.x + distance * Math.sin(polar) * Math.sin(azimuth),
+          target.y + distance * Math.cos(polar),
+          target.z + distance * Math.sin(polar) * Math.cos(azimuth)
+        );
+        camera.lookAt(target);
+      }
+
+      function resize() {
+        const width = Math.max(1, host.clientWidth);
+        const height = Math.max(1, host.clientHeight);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height, false);
+      }
+
+      renderer.domElement.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0) return;
+        dragPointer = event.pointerId;
+        lastX = event.clientX;
+        lastY = event.clientY;
+        renderer.domElement.setPointerCapture(event.pointerId);
+      });
+      renderer.domElement.addEventListener("pointermove", (event) => {
+        if (event.pointerId !== dragPointer) return;
+        azimuth -= (event.clientX - lastX) * 0.008;
+        polar = THREE.MathUtils.clamp(polar + (event.clientY - lastY) * 0.006, 0.32, 2.65);
+        lastX = event.clientX;
+        lastY = event.clientY;
+        updateCamera();
+      });
+      renderer.domElement.addEventListener("pointerup", (event) => {
+        if (event.pointerId !== dragPointer) return;
+        dragPointer = null;
+        if (renderer.domElement.hasPointerCapture(event.pointerId)) {
+          renderer.domElement.releasePointerCapture(event.pointerId);
+        }
+      });
+      renderer.domElement.addEventListener("pointercancel", () => { dragPointer = null; });
+      renderer.domElement.addEventListener("lostpointercapture", () => { dragPointer = null; });
+      renderer.domElement.addEventListener("wheel", (event) => {
+        distance = THREE.MathUtils.clamp(distance + event.deltaY * 0.006, 4.8, 12);
+        updateCamera();
+        event.preventDefault();
+      }, { passive: false });
+      document.getElementById("reset-view").addEventListener("click", () => {
+        azimuth = initialAzimuth;
+        polar = initialPolar;
+        distance = initialDistance;
+        updateCamera();
+      });
+
+      updateCamera();
+      resize();
+      window.addEventListener("resize", resize);
+      function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      }
+      animate();
+    }).catch((error) => {
+      console.error("HAM asset failed to load:", error);
+      errorScreen.classList.add("is-visible");
+    });
+  </script>
+</body>
+</html>

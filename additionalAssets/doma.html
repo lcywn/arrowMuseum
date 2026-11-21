@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>doma · 나무 도마 에셋</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #eee8dc;
+      --muted: #a7aaa2;
+      --gold: #d7ad6c;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #17211e;
+      color: var(--ink);
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    }
+
+    #scene { position: fixed; inset: 0; }
+    #scene canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(13, 20, 18, .64), transparent 54%),
+        linear-gradient(0deg, rgba(11, 17, 15, .55), transparent 34%, rgba(11, 17, 15, .18));
+    }
+
+    header {
+      position: fixed;
+      top: 28px;
+      left: clamp(24px, 5vw, 72px);
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .mark {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .65);
+      border-radius: 50%;
+      color: var(--gold);
+      font: 18px Georgia, serif;
+    }
+
+    .heading { display: grid; gap: 4px; }
+    .heading small { color: var(--gold); font-size: 9px; font-weight: 700; letter-spacing: .22em; }
+    .heading strong { font-size: 14px; font-weight: 600; letter-spacing: .06em; }
+
+    .caption {
+      position: fixed;
+      bottom: 34px;
+      left: clamp(24px, 5vw, 72px);
+    }
+
+    .caption p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .04em;
+    }
+
+    .caption h1 {
+      margin: 0 0 8px;
+      font: 500 clamp(29px, 4vw, 43px) "Batang", "Nanum Myeongjo", serif;
+      letter-spacing: -.07em;
+    }
+
+    .caption .dimensions { margin-top: 7px; color: #c4a878; }
+
+    .controls {
+      position: fixed;
+      right: clamp(20px, 4vw, 56px);
+      bottom: 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: #b6b9b0;
+      font-size: 10px;
+    }
+
+    button {
+      min-height: 36px;
+      padding: 0 13px;
+      border: 1px solid rgba(232, 214, 174, .23);
+      border-radius: 8px;
+      background: rgba(25, 34, 31, .75);
+      color: var(--ink);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:hover { border-color: rgba(215, 173, 108, .7); }
+
+    #load-error {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 24px;
+      background: #17211e;
+      color: #f1dfbf;
+      text-align: center;
+    }
+
+    #load-error.is-visible { display: grid; }
+
+    @media (max-width: 620px) {
+      header { top: 18px; left: 20px; }
+      .caption { bottom: 92px; left: 22px; right: 22px; }
+      .caption p { max-width: 420px; line-height: 1.6; }
+      .controls { right: 20px; bottom: 21px; left: 22px; justify-content: space-between; }
+      .controls span { font-size: 9px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="scene" aria-label="회전해 살펴볼 수 있는 doma 3D 도마 에셋"></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <header>
+    <div class="mark" aria-hidden="true">木</div>
+    <div class="heading"><small>HANDCRAFT WORKSHOP / ASSET</small><strong>doma</strong></div>
+  </header>
+  <section class="caption">
+    <h1>나무 도마</h1>
+    <p>도마 전체에 나이테와 거친 결을 살린 원목 질감을 입혔습니다.</p>
+    <p class="dimensions" id="dimensions"></p>
+  </section>
+  <div class="controls">
+    <span>드래그하여 앞·옆면 회전 · 휠로 확대</span>
+    <button id="reset-view" type="button">시점 초기화</button>
+  </div>
+  <div id="load-error" role="alert">3D 에셋을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 페이지를 새로고침해주세요.</div>
+
+  <script type="module">
+    const errorScreen = document.getElementById("load-error");
+    import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js").then((THREE) => {
+      const host = document.getElementById("scene");
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x17211e);
+      scene.fog = new THREE.Fog(0x17211e, 12, 24);
+
+      const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 60);
+      const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.08;
+      host.appendChild(renderer.domElement);
+
+      scene.add(new THREE.HemisphereLight(0xe4ddc5, 0x263732, 1.9));
+      const keyLight = new THREE.DirectionalLight(0xffd8a0, 3.2);
+      keyLight.position.set(-4.5, 7, 5);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.set(2048, 2048);
+      keyLight.shadow.camera.left = -4;
+      keyLight.shadow.camera.right = 4;
+      keyLight.shadow.camera.top = 4;
+      keyLight.shadow.camera.bottom = -4;
+      keyLight.shadow.bias = -0.00025;
+      scene.add(keyLight);
+
+      const fillLight = new THREE.PointLight(0x8eaa8b, 12, 12, 2);
+      fillLight.position.set(-3.5, 2.5, -2);
+      scene.add(fillLight);
+
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(80, 80),
+        new THREE.MeshStandardMaterial({ color: 0x202923, roughness: 0.96 })
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = -0.01;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      const boardLength = 2.4;
+      const boardWidth = 1.5;
+      const boardThickness = 0.16;
+      document.getElementById("dimensions").textContent =
+        `가로 ${boardLength.toFixed(2)} · 세로 ${boardWidth.toFixed(2)} · 두께 ${boardThickness.toFixed(2)}`;
+
+      let seed = 39271;
+      function random() {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      }
+
+      function makeWoodTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1024;
+        canvas.height = 512;
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Could not create the doma wood texture.");
+
+        const base = context.createLinearGradient(0, 0, 0, canvas.height);
+        base.addColorStop(0, "#81765f");
+        base.addColorStop(0.48, "#766e5d");
+        base.addColorStop(1, "#6b6455");
+        context.fillStyle = base;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        for (let index = 0; index < 270; index += 1) {
+          const y = random() * canvas.height;
+          const phase = random() * Math.PI * 2;
+          const amplitude = 1.5 + random() * 4;
+          const frequency = 0.002 + random() * 0.012;
+          const darkGrain = random() > 0.48;
+          const alpha = darkGrain ? 0.11 + random() * 0.14 : 0.06 + random() * 0.1;
+          context.strokeStyle = darkGrain
+            ? `rgba(43, 34, 24, ${alpha})`
+            : `rgba(195, 180, 151, ${alpha})`;
+          context.lineWidth = 0.8 + random() * 1.4;
+          context.beginPath();
+          for (let x = 0; x <= canvas.width; x += 16) {
+            const wave = Math.sin(x * frequency + phase) * amplitude
+              + Math.sin(x * frequency * 0.29 + phase * 1.6) * amplitude * 0.62;
+            context.lineTo(x, y + wave);
+          }
+          context.stroke();
+        }
+
+        for (let index = 0; index < 6; index += 1) {
+          const x = 110 + random() * (canvas.width - 220);
+          const y = 55 + random() * (canvas.height - 110);
+          const angle = (random() - 0.5) * 0.08;
+          const radiusX = 12 + random() * 12;
+          const radiusY = 3 + random() * 2.5;
+          context.save();
+          context.translate(x, y);
+          context.rotate(angle);
+          for (let ring = 0; ring < 6; ring += 1) {
+            context.beginPath();
+            context.ellipse(0, 0, radiusX + ring * 4, radiusY + ring * 1.6, 0, 0, Math.PI * 2);
+            context.strokeStyle = `rgba(42, 33, 24, ${0.34 - ring * 0.035})`;
+            context.lineWidth = 1.2 + (ring === 0 ? 0.8 : 0);
+            context.stroke();
+          }
+          context.beginPath();
+          context.ellipse(0, 0, radiusX * 0.45, radiusY * 0.55, 0, 0, Math.PI * 2);
+          context.fillStyle = "rgba(42, 33, 24, 0.24)";
+          context.fill();
+          context.restore();
+        }
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        return texture;
+      }
+
+      function roundedRectangle(width, height, radius) {
+        const halfWidth = width / 2;
+        const halfHeight = height / 2;
+        const shape = new THREE.Shape();
+        shape.moveTo(-halfWidth + radius, -halfHeight);
+        shape.lineTo(halfWidth - radius, -halfHeight);
+        shape.quadraticCurveTo(halfWidth, -halfHeight, halfWidth, -halfHeight + radius);
+        shape.lineTo(halfWidth, halfHeight - radius);
+        shape.quadraticCurveTo(halfWidth, halfHeight, halfWidth - radius, halfHeight);
+        shape.lineTo(-halfWidth + radius, halfHeight);
+        shape.quadraticCurveTo(-halfWidth, halfHeight, -halfWidth, halfHeight - radius);
+        shape.lineTo(-halfWidth, -halfHeight + radius);
+        shape.quadraticCurveTo(-halfWidth, -halfHeight, -halfWidth + radius, -halfHeight);
+        return shape;
+      }
+
+      const woodTexture = makeWoodTexture();
+      const faceMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        map: woodTexture,
+        bumpMap: woodTexture,
+        bumpScale: 0.022,
+        roughness: 0.98,
+        metalness: 0
+      });
+      const edgeMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        map: woodTexture,
+        bumpMap: woodTexture,
+        bumpScale: 0.022,
+        roughness: 0.98,
+        metalness: 0
+      });
+
+      const asset = new THREE.Group();
+      scene.add(asset);
+      const boardShape = roundedRectangle(boardLength, boardWidth, 0.05);
+      const boardGeometry = new THREE.ExtrudeGeometry(boardShape, {
+        depth: boardThickness,
+        bevelEnabled: false,
+        steps: 1,
+        curveSegments: 6
+      });
+      boardGeometry.translate(0, 0, -boardThickness / 2);
+      const board = new THREE.Mesh(boardGeometry, edgeMaterial);
+      board.rotation.x = -Math.PI / 2;
+      board.castShadow = true;
+      board.receiveShadow = true;
+      asset.add(board);
+
+      const topFaceGeometry = new THREE.ShapeGeometry(
+        boardShape,
+        6
+      );
+      const topPositions = topFaceGeometry.attributes.position;
+      const topUvs = [];
+      for (let index = 0; index < topPositions.count; index += 1) {
+        topUvs.push(
+          (topPositions.getX(index) + boardLength / 2) / boardLength,
+          (topPositions.getY(index) + boardWidth / 2) / boardWidth
+        );
+      }
+      topFaceGeometry.setAttribute("uv", new THREE.Float32BufferAttribute(topUvs, 2));
+      const topFace = new THREE.Mesh(topFaceGeometry, faceMaterial);
+      topFace.rotation.x = -Math.PI / 2;
+      topFace.position.y = boardThickness / 2 + 0.0005;
+      topFace.receiveShadow = true;
+      asset.add(topFace);
+
+      asset.position.y = boardThickness / 2 + 0.006;
+
+      const target = new THREE.Vector3(0, asset.position.y, 0);
+      let cameraDistance = 3.2;
+      let isDragging = false;
+      let previousPointerX = 0;
+      let previousPointerY = 0;
+
+      function positionCamera() {
+        camera.position.set(
+          target.x,
+          target.y + cameraDistance * 0.52,
+          target.z + cameraDistance * 0.85
+        );
+        camera.lookAt(target);
+      }
+
+      function resize() {
+        const width = Math.max(1, host.clientWidth);
+        const height = Math.max(1, host.clientHeight);
+        camera.aspect = width / height;
+        const halfFov = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+        const horizontalDistance = boardLength / (2 * halfFov * camera.aspect);
+        const verticalDistance = boardWidth / (2 * halfFov);
+        cameraDistance = Math.max(horizontalDistance, verticalDistance) * 1.58;
+        positionCamera();
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height, false);
+      }
+
+      renderer.domElement.addEventListener("pointerdown", (event) => {
+        isDragging = true;
+        previousPointerX = event.clientX;
+        previousPointerY = event.clientY;
+        renderer.domElement.setPointerCapture(event.pointerId);
+      });
+      renderer.domElement.addEventListener("pointermove", (event) => {
+        if (!isDragging) return;
+        asset.rotation.y += (event.clientX - previousPointerX) * 0.008;
+        asset.rotation.x = THREE.MathUtils.clamp(
+          asset.rotation.x + (event.clientY - previousPointerY) * 0.006,
+          -0.75,
+          0.75
+        );
+        previousPointerX = event.clientX;
+        previousPointerY = event.clientY;
+      });
+      function endDrag(event) {
+        isDragging = false;
+        if (renderer.domElement.hasPointerCapture(event.pointerId)) {
+          renderer.domElement.releasePointerCapture(event.pointerId);
+        }
+      }
+      renderer.domElement.addEventListener("pointerup", endDrag);
+      renderer.domElement.addEventListener("pointercancel", endDrag);
+      renderer.domElement.addEventListener("lostpointercapture", () => {
+        isDragging = false;
+      });
+      renderer.domElement.addEventListener("wheel", (event) => {
+        event.preventDefault();
+        cameraDistance = THREE.MathUtils.clamp(
+          cameraDistance * Math.exp(event.deltaY * 0.001),
+          2.2,
+          7
+        );
+        positionCamera();
+      }, { passive: false });
+      document.getElementById("reset-view").addEventListener("click", () => {
+        asset.rotation.set(0, 0, 0);
+        resize();
+      });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+      animate();
+    }).catch((error) => {
+      console.error("Three.js failed to load; the doma asset could not be displayed.", error);
+      errorScreen.classList.add("is-visible");
+    });
+  </script>
+</body>
+</html>
