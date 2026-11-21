@@ -1,0 +1,2229 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>대나무 공방 - 1단계 부잡이 과정</title>
+  //test 
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f2ead8;
+      --muted: #b8b8a5;
+      --gold: #d7ad6c;
+      --green: #8cae7c;
+      --panel: rgba(25, 34, 31, .82);
+      --line: rgba(232, 214, 174, .18);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #17211e;
+      color: var(--ink);
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    }
+
+    button { font: inherit; }
+
+    #scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    #scene canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+
+    body.is-dragging #scene canvas { cursor: grabbing; }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(13, 20, 18, .82) 0%, rgba(13, 20, 18, .52) 29%, transparent 58%),
+        linear-gradient(0deg, rgba(11, 17, 15, .78), transparent 34%, rgba(11, 17, 15, .30));
+    }
+
+    #interface {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .topbar {
+      position: absolute;
+      top: max(25px, env(safe-area-inset-top));
+      left: clamp(22px, 4.2vw, 66px);
+      right: clamp(22px, 4.2vw, 66px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 39px;
+      height: 39px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .65);
+      border-radius: 50%;
+      color: var(--gold);
+      font-family: Georgia, serif;
+      font-size: 19px;
+      line-height: 1;
+    }
+
+    .brand-copy { display: grid; gap: 3px; }
+
+    .brand-copy small {
+      color: var(--gold);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .22em;
+    }
+
+    .brand-copy strong {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: .08em;
+    }
+
+    .stage-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px 9px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(21, 29, 26, .64);
+      color: #e8dfcc;
+      font-size: 12px;
+      letter-spacing: .04em;
+      backdrop-filter: blur(12px);
+    }
+
+    .stage-chip b {
+      display: grid;
+      width: 27px;
+      height: 27px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--gold);
+      color: #20231c;
+      font-family: Georgia, serif;
+      font-size: 12px;
+    }
+
+    .intro {
+      position: absolute;
+      top: clamp(132px, 23vh, 220px);
+      left: clamp(24px, 7vw, 112px);
+      width: min(340px, 36vw);
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 19px;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .2em;
+    }
+
+    .eyebrow::before {
+      width: 24px;
+      height: 1px;
+      background: var(--gold);
+      content: "";
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Batang", "Nanum Myeongjo", "Malgun Gothic", serif;
+      font-size: clamp(30px, 3.5vw, 49px);
+      font-weight: 500;
+      letter-spacing: -.08em;
+      line-height: 1.35;
+      text-shadow: 0 3px 24px rgba(0, 0, 0, .35);
+    }
+
+    h1 em {
+      color: #d9c294;
+      font-style: normal;
+    }
+
+    #instruction {
+      min-height: 48px;
+      margin: 18px 0 0;
+      color: #c7c7b8;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: -.025em;
+      line-height: 1.8;
+      word-break: keep-all;
+    }
+
+    .gesture-note {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      margin-top: 24px;
+      color: #a7ad9e;
+      font-size: 11px;
+      letter-spacing: .015em;
+      transition: opacity .25s, transform .25s;
+    }
+
+    .gesture-note.is-hidden { opacity: 0; transform: translateY(-4px); }
+
+    .gesture-icon {
+      position: relative;
+      width: 29px;
+      height: 35px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(215, 173, 108, .65);
+      border-radius: 15px;
+    }
+
+    .gesture-icon::before {
+      position: absolute;
+      top: 6px;
+      left: 12px;
+      width: 3px;
+      height: 7px;
+      border-radius: 3px;
+      background: var(--gold);
+      content: "";
+    }
+
+    .gesture-icon::after {
+      position: absolute;
+      top: 12px;
+      left: 13px;
+      width: 1px;
+      height: 9px;
+      background: rgba(215, 173, 108, .8);
+      content: "";
+      transform: rotate(-35deg);
+      transform-origin: top;
+    }
+
+    #interaction-guide {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      opacity: 1;
+      pointer-events: none;
+      transition: opacity .22s ease;
+    }
+
+    #interaction-guide.is-hidden { opacity: 0; }
+
+    #straightening-guide {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity .22s ease;
+    }
+
+    #straightening-guide.is-hidden { opacity: 0; }
+
+    .straightening-target {
+      opacity: 1;
+      transition: opacity .28s ease;
+    }
+
+    .straightening-target.is-selected {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #straightening-guide.is-hidden .straightening-hit-area,
+    .straightening-target.is-selected .straightening-hit-area {
+      pointer-events: none;
+    }
+
+    #straightening-guide.is-busy .straightening-hit-area {
+      pointer-events: none;
+    }
+
+    .straightening-hit-area {
+      fill: transparent;
+      pointer-events: all;
+      cursor: pointer;
+    }
+
+    .straightening-ring {
+      fill: rgba(255, 255, 255, .04);
+      stroke: rgba(255, 255, 248, .92);
+      stroke-width: 1.5;
+      filter: drop-shadow(0 0 6px rgba(255, 255, 255, .7));
+      animation: guide-pulse 1.7s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    #guide-arrow {
+      fill: none;
+      stroke: rgba(255, 255, 248, .9);
+      stroke-width: 1.8;
+      stroke-dasharray: 6 8;
+      stroke-linecap: round;
+      marker-end: url(#guide-arrowhead);
+      filter: drop-shadow(0 0 5px rgba(255, 255, 255, .75));
+      animation: guide-flow 1.3s linear infinite, guide-pulse 1.7s ease-in-out infinite;
+    }
+
+    #guide-grab-ring {
+      fill: rgba(255, 255, 255, .04);
+      stroke: rgba(255, 255, 248, .92);
+      stroke-width: 1.5;
+      filter: drop-shadow(0 0 6px rgba(255, 255, 255, .7));
+      animation: guide-pulse 1.7s ease-in-out infinite;
+    }
+
+    @keyframes guide-flow { to { stroke-dashoffset: -28; } }
+
+    @keyframes guide-pulse {
+      0%, 100% { opacity: .58; }
+      50% { opacity: 1; }
+    }
+
+    #fire-marker {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transform: translate(-50%, -50%);
+      opacity: .8;
+      transition: opacity .25s, filter .25s;
+      white-space: nowrap;
+    }
+
+    #fire-marker .marker-dot {
+      width: 7px;
+      height: 7px;
+      border: 1px solid #f3cb81;
+      border-radius: 50%;
+      background: #d99a4b;
+      box-shadow: 0 0 14px rgba(255, 164, 65, .8);
+    }
+
+    #fire-marker.is-hot {
+      opacity: 1;
+      filter: drop-shadow(0 0 9px rgba(255, 147, 54, .7));
+    }
+
+    .bottom-area {
+      position: absolute;
+      right: 20px;
+      bottom: max(30px, env(safe-area-inset-bottom));
+      left: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .gauge-card {
+      width: min(520px, 100%);
+      padding: 17px 21px 15px;
+      border: 1px solid rgba(221, 204, 163, .22);
+      border-radius: 14px;
+      background: var(--panel);
+      box-shadow: 0 18px 55px rgba(0, 0, 0, .28);
+      backdrop-filter: blur(16px);
+      transition: opacity .25s, transform .25s;
+    }
+
+    .gauge-head, .gauge-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .gauge-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: #e5dfce;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .04em;
+    }
+
+    .heat-icon {
+      position: relative;
+      width: 20px;
+      height: 20px;
+      border: 1px solid rgba(226, 173, 100, .45);
+      border-radius: 50%;
+    }
+
+    .heat-icon::before, .heat-icon::after {
+      position: absolute;
+      bottom: 4px;
+      left: 8px;
+      width: 4px;
+      height: 7px;
+      border-radius: 70% 20% 65% 35%;
+      background: #e3a65c;
+      content: "";
+      transform: rotate(20deg);
+    }
+
+    .heat-icon::after {
+      bottom: 4px;
+      left: 5px;
+      width: 3px;
+      height: 5px;
+      opacity: .65;
+      transform: rotate(-18deg);
+    }
+
+    #gauge-value {
+      color: #f1d5a5;
+      font-family: Georgia, serif;
+      font-size: 22px;
+      font-weight: 400;
+      letter-spacing: -.04em;
+    }
+
+    #gauge-value small {
+      margin-left: 2px;
+      color: #c2b9a2;
+      font-family: inherit;
+      font-size: 12px;
+    }
+
+    .gauge-track {
+      position: relative;
+      height: 7px;
+      margin: 12px 0 10px;
+      overflow: hidden;
+      border-radius: 8px;
+      background: rgba(231, 220, 191, .12);
+    }
+
+    #gauge-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #849e6d, #d2ae6b 72%, #f0a24f);
+      box-shadow: 0 0 14px rgba(232, 171, 83, .4);
+      transition: width .12s linear;
+    }
+
+    .gauge-label {
+      color: #aeb3a4;
+      font-size: 10px;
+      letter-spacing: .02em;
+    }
+
+    #gauge-hint { color: #c9c4b2; }
+
+    .gauge-card.is-hidden { display: none; }
+
+    #complete-screen {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(10, 16, 14, .37);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .3s, visibility .3s;
+      pointer-events: none;
+    }
+
+    #complete-screen.is-visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .complete-card {
+      width: min(435px, 100%);
+      padding: 36px 34px 30px;
+      border: 1px solid rgba(226, 202, 152, .34);
+      border-radius: 20px;
+      background: rgba(26, 35, 31, .94);
+      box-shadow: 0 25px 90px rgba(0, 0, 0, .45);
+      text-align: center;
+      backdrop-filter: blur(18px);
+      transform: translateY(12px) scale(.98);
+      transition: transform .35s cubic-bezier(.2,.8,.2,1);
+    }
+
+    #complete-screen.is-visible .complete-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .complete-seal {
+      display: grid;
+      width: 51px;
+      height: 51px;
+      margin: 0 auto 17px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .65);
+      border-radius: 50%;
+      color: #ecd09b;
+      font-size: 22px;
+      box-shadow: 0 0 30px rgba(215, 173, 108, .12);
+    }
+
+    .complete-kicker {
+      margin: 0 0 9px;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .2em;
+    }
+
+    .complete-card h2 {
+      margin: 0;
+      font-family: "Batang", "Nanum Myeongjo", "Malgun Gothic", serif;
+      font-size: 31px;
+      font-weight: 500;
+      letter-spacing: -.06em;
+    }
+
+    .complete-copy {
+      margin: 12px 0 25px;
+      color: #b8bbae;
+      font-size: 12px;
+      line-height: 1.8;
+      word-break: keep-all;
+    }
+
+    .complete-actions {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 9px;
+    }
+
+    .action-button {
+      min-height: 44px;
+      padding: 0 13px;
+      border: 1px solid rgba(231, 215, 180, .24);
+      border-radius: 9px;
+      background: transparent;
+      color: #ded8c8;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: -.02em;
+      cursor: pointer;
+      transition: background .2s, border-color .2s, transform .2s;
+      pointer-events: auto;
+    }
+
+    .action-button:hover {
+      border-color: rgba(231, 215, 180, .6);
+      background: rgba(255, 255, 255, .05);
+      transform: translateY(-1px);
+    }
+
+    .action-button.primary {
+      border-color: #d6ad70;
+      background: #d6ad70;
+      color: #25271f;
+    }
+
+    .action-button.primary:hover {
+      border-color: #ebc98e;
+      background: #ebc98e;
+    }
+
+    #toast {
+      position: absolute;
+      bottom: max(145px, calc(env(safe-area-inset-bottom) + 115px));
+      left: 50%;
+      padding: 10px 15px;
+      border: 1px solid rgba(227, 206, 164, .22);
+      border-radius: 999px;
+      background: rgba(23, 31, 28, .9);
+      color: #e4d7bb;
+      font-size: 11px;
+      opacity: 0;
+      transform: translate(-50%, 8px);
+      transition: opacity .2s, transform .2s;
+      white-space: nowrap;
+    }
+
+    #toast.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    #load-error {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: none;
+      place-items: center;
+      padding: 24px;
+      background: #17211e;
+      color: #f2ead8;
+      text-align: center;
+    }
+
+    #load-error.is-visible { display: grid; }
+    #load-error p { max-width: 470px; line-height: 1.8; }
+
+    #stage-transition-curtain {
+      position: fixed;
+      inset: 0;
+      z-index: 6;
+      background: #17211e;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s ease;
+    }
+
+    #stage-transition-curtain.is-visible { opacity: 1; }
+
+    @keyframes card-in {
+      from { opacity: 0; transform: translateY(7px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 700px) {
+      .topbar {
+        top: max(17px, env(safe-area-inset-top));
+        left: 18px;
+        right: 18px;
+      }
+
+      .brand-mark { width: 34px; height: 34px; font-size: 16px; }
+      .brand-copy small { font-size: 8px; }
+      .brand-copy strong { font-size: 12px; }
+      .stage-chip { gap: 7px; padding: 7px 10px 7px 7px; font-size: 10px; }
+      .stage-chip b { width: 24px; height: 24px; }
+
+      .intro {
+        top: clamp(100px, 17vh, 155px);
+        left: 23px;
+        width: min(270px, 69vw);
+      }
+
+      .eyebrow { margin-bottom: 12px; font-size: 9px; }
+      h1 { font-size: clamp(28px, 8vw, 39px); }
+      #instruction { min-height: 39px; margin-top: 12px; font-size: 11px; }
+      .gesture-note { margin-top: 15px; font-size: 10px; }
+      .gesture-icon { width: 25px; height: 31px; }
+      .gesture-icon::before { left: 10px; }
+      .gesture-icon::after { left: 11px; }
+
+      .bottom-area {
+        right: 13px;
+        bottom: max(14px, env(safe-area-inset-bottom));
+        left: 13px;
+      }
+
+      .gauge-card { padding: 14px 15px 12px; }
+      .gauge-label { font-size: 9px; }
+      .complete-card { padding: 30px 22px 23px; }
+      .complete-card h2 { font-size: 28px; }
+      .complete-copy { font-size: 11px; }
+      .action-button { min-height: 42px; padding: 0 8px; font-size: 10px; }
+      #toast { bottom: max(130px, calc(env(safe-area-inset-bottom) + 105px)); }
+    }
+
+    @media (max-width: 380px) {
+      .intro { top: 105px; }
+      .gesture-note { display: none; }
+      .stage-chip { font-size: 9px; }
+      .complete-actions { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+      #guide-arrow, #guide-grab-ring, .straightening-ring { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="scene" aria-label="3D 대나무 공방 장면"></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <div id="stage-transition-curtain" aria-hidden="true"></div>
+
+  <main id="interface">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">竹</div>
+        <div class="brand-copy">
+          <small>HANDCRAFT WORKSHOP</small>
+          <strong>대나무 공방</strong>
+        </div>
+      </div>
+      <div class="stage-chip"><b>01</b><span>1단계 · 부잡이 과정</span></div>
+    </header>
+
+    <section class="intro" aria-live="polite">
+      <p class="eyebrow">STAGE 01 &nbsp; / &nbsp; BAMBOO</p>
+      <h1>불에 달구고<br><em>곧게 펴기</em></h1>
+      <p id="instruction">대나무를 잡아 화로의 원통 입구에 넣어주세요.</p>
+      <div class="gesture-note">
+        <span class="gesture-icon" aria-hidden="true"></span>
+        <span>대나무를 잡고 원통 안으로 밀어 넣어보세요</span>
+      </div>
+    </section>
+
+    <svg id="interaction-guide" class="is-hidden" aria-hidden="true">
+      <defs>
+        <marker id="guide-arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+          <path d="M 1 1 L 7 4 L 1 7" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+        </marker>
+      </defs>
+      <path id="guide-arrow"></path>
+      <g id="guide-grab">
+        <circle id="guide-grab-ring" r="19"></circle>
+      </g>
+    </svg>
+
+    <svg id="straightening-guide" class="is-hidden" aria-label="표시된 원을 더블클릭해 대나무를 곧게 펴세요">
+      <g class="straightening-target" data-region-index="0">
+        <circle class="straightening-hit-area" r="30"></circle>
+        <circle class="straightening-ring" r="21"></circle>
+      </g>
+      <g class="straightening-target" data-region-index="1">
+        <circle class="straightening-hit-area" r="30"></circle>
+        <circle class="straightening-ring" r="21"></circle>
+      </g>
+      <g class="straightening-target" data-region-index="2">
+        <circle class="straightening-hit-area" r="30"></circle>
+        <circle class="straightening-ring" r="21"></circle>
+      </g>
+    </svg>
+
+    <div id="fire-marker" aria-hidden="true">
+      <span class="marker-dot"></span>
+    </div>
+
+    <section class="bottom-area" aria-live="polite">
+      <div class="gauge-card" id="gauge-card">
+        <div class="gauge-head">
+          <div class="gauge-title"><span class="heat-icon" aria-hidden="true"></span><span>원통 가열</span></div>
+          <strong id="gauge-value">0<small>%</small></strong>
+        </div>
+        <div class="gauge-track" role="progressbar" aria-label="대나무 가열 진행도" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div id="gauge-fill"></div>
+        </div>
+        <div class="gauge-label">
+          <span id="gauge-hint">대나무를 원통 안에 넣어주세요</span>
+          <span id="gauge-state">가열 준비</span>
+        </div>
+      </div>
+
+    </section>
+
+    <section id="complete-screen" aria-modal="true" role="dialog" aria-labelledby="complete-title">
+      <div class="complete-card">
+        <div class="complete-seal" aria-hidden="true">✓</div>
+        <p class="complete-kicker">STAGE 01 COMPLETE</p>
+        <h2 id="complete-title">1단계 완료</h2>
+        <p class="complete-copy">대나무를 완전히 곧게 펴는 작업을 마쳤어요.<br>다음 작업을 준비해보세요.</p>
+        <div class="complete-actions">
+          <button class="action-button" id="retry-button" type="button">1단계 다시하기</button>
+          <button class="action-button primary" id="next-button" type="button">2단계로 넘어가기 <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+    </section>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <div id="load-error" role="alert">
+    <p>3D 장면을 불러오지 못했습니다.<br>인터넷 연결을 확인한 뒤 페이지를 새로고침해주세요.</p>
+  </div>
+
+  <script src="../additionalAssets/bambooSpots.js"></script>
+  <script type="module">
+    const errorScreen = document.getElementById("load-error");
+    import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js").then((THREE) => {
+      (() => {
+      "use strict";
+
+      const host = document.getElementById("scene");
+      const instruction = document.getElementById("instruction");
+      const gestureNote = document.querySelector(".gesture-note");
+      const interactionGuide = document.getElementById("interaction-guide");
+      const straighteningGuide = document.getElementById("straightening-guide");
+      const straighteningGuideTargets = Array.from(
+        straighteningGuide.querySelectorAll(".straightening-target")
+      );
+      const guideArrow = document.getElementById("guide-arrow");
+      const guideGrab = document.getElementById("guide-grab");
+      const gaugeCard = document.getElementById("gauge-card");
+      const gaugeFill = document.getElementById("gauge-fill");
+      const gaugeValue = document.getElementById("gauge-value");
+      const gaugeTrack = document.querySelector(".gauge-track");
+      const gaugeHint = document.getElementById("gauge-hint");
+      const gaugeState = document.getElementById("gauge-state");
+      const completeScreen = document.getElementById("complete-screen");
+      const fireMarker = document.getElementById("fire-marker");
+      const toast = document.getElementById("toast");
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x17211e);
+      scene.fog = new THREE.Fog(0x17211e, 17, 32);
+
+      const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 80);
+      const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.08;
+      host.appendChild(renderer.domElement);
+
+      const ambient = new THREE.HemisphereLight(0xe4ddc5, 0x263732, 1.75);
+      scene.add(ambient);
+
+      const keyLight = new THREE.DirectionalLight(0xffd8a0, 3.1);
+      keyLight.position.set(-4.5, 9, 6);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.set(2048, 2048);
+      keyLight.shadow.camera.left = -9;
+      keyLight.shadow.camera.right = 9;
+      keyLight.shadow.camera.top = 9;
+      keyLight.shadow.camera.bottom = -8;
+      keyLight.shadow.bias = -0.00025;
+      scene.add(keyLight);
+
+      const fillLight = new THREE.PointLight(0x8eaa8b, 24, 17, 2);
+      fillLight.position.set(-4, 4, -2);
+      scene.add(fillLight);
+
+      const fireLight = new THREE.PointLight(0xff8a36, 28, 6, 2);
+      scene.add(fireLight);
+
+      const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x18231f, roughness: 0.96 });
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), groundMaterial);
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -0.78;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x202c27, roughness: 0.9 });
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(15, 5, 0.24), wallMaterial);
+      wall.position.set(0, 1.72, -4.12);
+      wall.receiveShadow = true;
+      wall.castShadow = true;
+      scene.add(wall);
+
+      const wallTrimMaterial = new THREE.MeshStandardMaterial({ color: 0x2d3931, roughness: 0.8 });
+      for (let x = -7; x <= 7; x += 0.72) {
+        const slat = new THREE.Mesh(new THREE.BoxGeometry(0.045, 3.7, 0.06), wallTrimMaterial);
+        slat.position.set(x, 1.7, -3.96);
+        slat.castShadow = true;
+        scene.add(slat);
+      }
+
+      function makeBox(parent, size, material, position, castShadow = true) {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), material);
+        mesh.position.set(position[0], position[1], position[2]);
+        mesh.castShadow = castShadow;
+        mesh.receiveShadow = true;
+        parent.add(mesh);
+        return mesh;
+      }
+
+      const table = new THREE.Group();
+      scene.add(table);
+      const plankColors = [0x624a32, 0x705238, 0x664a30, 0x76583b, 0x624831];
+      for (let index = 0; index < 5; index += 1) {
+        const plankMaterial = new THREE.MeshStandardMaterial({
+          color: plankColors[index],
+          roughness: 0.83,
+          metalness: 0.02
+        });
+        makeBox(table, [9.7, 0.2, 0.97], plankMaterial, [0, 0.46, -1.94 + index * 0.97]);
+      }
+
+      const tableEdgeMaterial = new THREE.MeshStandardMaterial({ color: 0x493723, roughness: 0.78 });
+      makeBox(table, [9.84, 0.09, 0.09], tableEdgeMaterial, [0, 0.39, -2.48]);
+      makeBox(table, [9.84, 0.09, 0.09], tableEdgeMaterial, [0, 0.39, 2.48]);
+
+      const legMaterial = new THREE.MeshStandardMaterial({ color: 0x493723, roughness: 0.84 });
+      for (const x of [-4.18, 4.18]) {
+        for (const z of [-2.05, 2.05]) {
+          makeBox(table, [0.23, 1.15, 0.23], legMaterial, [x, -0.115, z]);
+        }
+      }
+
+      const braceMaterial = new THREE.MeshStandardMaterial({ color: 0x55402b, roughness: 0.85 });
+      makeBox(table, [8.35, 0.16, 0.2], braceMaterial, [0, -0.25, -2.02]);
+      makeBox(table, [8.35, 0.16, 0.2], braceMaterial, [0, -0.25, 2.02]);
+      makeBox(table, [0.19, 0.15, 4.15], braceMaterial, [-3.98, -0.25, 0]);
+      makeBox(table, [0.19, 0.15, 4.15], braceMaterial, [3.98, -0.25, 0]);
+
+      const TABLE_TOP = 0.56;
+      const brazierPosition = new THREE.Vector3(2.45, TABLE_TOP, -0.12);
+      const BRAZIER_LENGTH = 3.2;
+      const BRAZIER_HEIGHT = 1.48;
+      const BRAZIER_WIDTH = 1.55;
+      const BRAZIER_BOTTOM = 0.12;
+      const BRAZIER_OPENING_HEIGHT = 0.55;
+      const BRAZIER_OPENING_RADIUS = 0.225;
+      const BRAZIER_YAW = Math.PI / 4;
+      const BAMBOO_START_YAW = 0;
+      const BRAZIER_SCALE_X = 2 / 3;
+      const TUBE_ENTRY_LOCAL_X = -BRAZIER_LENGTH / 2 + 0.45;
+      const TUBE_ENTRY_SNAP_RADIUS_PX = 20;
+      const BAMBOO_RECOGNITION_SEGMENTS = 16;
+      const BAMBOO_ORBIT_RADIUS_PX = 2;
+      const BAMBOO_ORBIT_FREQUENCY_HZ = 1;
+      const MAX_LOCAL_STRAIGHTENING = 0.3;
+      const HAM_SCALE = 0.52;
+      const HAM_JAW_CENTER_LOCAL_OFFSET = 1.08;
+      const HAM_ACTION_APPROACH_DURATION = 0.24;
+      const HAM_ACTION_TWIST_DURATION = 0.58;
+      const HAM_ACTION_RETURN_DURATION = 0.32;
+      const HAM_ACTION_ROLL = Math.PI / 2;
+      const HAM_TWIST_ANGLE = 0.07;
+      const HAM_TWIST_CYCLES = 2;
+      const TUBE_CENTER_Y = TABLE_TOP + BRAZIER_OPENING_HEIGHT;
+      const brazier = new THREE.Group();
+      brazier.position.set(brazierPosition.x, TABLE_TOP - BRAZIER_BOTTOM, brazierPosition.z);
+      brazier.scale.x = BRAZIER_SCALE_X;
+      brazier.rotation.y = BRAZIER_YAW;
+      scene.add(brazier);
+
+      let brazierSeed = 29417;
+      function brazierRandom() {
+        brazierSeed = (brazierSeed * 16807) % 2147483647;
+        return (brazierSeed - 1) / 2147483646;
+      }
+
+      function makeBrazierWoodTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 512;
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#a08e71";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        for (let index = 0; index < 180; index += 1) {
+          const y = brazierRandom() * canvas.height;
+          const amplitude = 0.4 + brazierRandom() * 1.2;
+          const frequency = 0.008 + brazierRandom() * 0.02;
+          const shade = brazierRandom() > 0.5 ? 66 : 228;
+          context.strokeStyle = `rgba(${shade}, ${Math.max(0, shade - 4)}, ${Math.max(0, shade - 12)}, ${0.025 + brazierRandom() * 0.04})`;
+          context.lineWidth = 0.5 + brazierRandom() * 0.7;
+          context.beginPath();
+          for (let x = 0; x <= canvas.width; x += 16) {
+            context.lineTo(x, y + Math.sin(x * frequency) * amplitude);
+          }
+          context.stroke();
+        }
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(2, 1.2);
+        return texture;
+      }
+
+      function makeBrazierRustTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 512;
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#929898";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        for (let index = 0; index < 24; index += 1) {
+          const edge = Math.floor(brazierRandom() * 4);
+          const x = edge < 2
+            ? (edge === 0 ? 8 + brazierRandom() * 48 : canvas.width - 56 + brazierRandom() * 48)
+            : brazierRandom() * canvas.width;
+          const y = edge >= 2
+            ? (edge === 2 ? 8 + brazierRandom() * 36 : canvas.height - 44 + brazierRandom() * 36)
+            : brazierRandom() * canvas.height;
+          const radius = 8 + brazierRandom() * 20;
+          const rust = context.createRadialGradient(x, y, 1, x, y, radius);
+          rust.addColorStop(0, `rgba(116, 77, 52, ${0.2 + brazierRandom() * 0.12})`);
+          rust.addColorStop(0.65, "rgba(133, 91, 61, 0.12)");
+          rust.addColorStop(1, "rgba(133, 91, 61, 0)");
+          context.fillStyle = rust;
+          context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+        }
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(1.4, 1.1);
+        return texture;
+      }
+
+      const brazierWoodTexture = makeBrazierWoodTexture();
+      const brazierWood = new THREE.MeshStandardMaterial({
+        color: 0x574b3a,
+        bumpMap: brazierWoodTexture,
+        bumpScale: 0.006,
+        roughness: 0.88,
+        metalness: 0
+      });
+      const brazierBoards = [0x514332, 0x5c4d39, 0x554733].map((color) => new THREE.MeshStandardMaterial({
+        color,
+        bumpMap: brazierWoodTexture,
+        bumpScale: 0.006,
+        roughness: 0.86,
+        metalness: 0
+      }));
+      const brazierDarkWood = new THREE.MeshStandardMaterial({
+        color: 0x30271e,
+        bumpMap: brazierWoodTexture,
+        bumpScale: 0.005,
+        roughness: 0.95,
+        metalness: 0
+      });
+      const brazierTubeMaterial = new THREE.MeshStandardMaterial({
+        color: 0x596264,
+        roughness: 0.64,
+        metalness: 0.74
+      });
+      const brazierSheetMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        map: makeBrazierRustTexture(),
+        roughness: 0.72,
+        metalness: 0.76,
+        side: THREE.DoubleSide
+      });
+
+      function makeBrazierEndPanel(rotationY) {
+        const shape = new THREE.Shape();
+        shape.moveTo(-BRAZIER_WIDTH / 2, 0);
+        shape.lineTo(BRAZIER_WIDTH / 2, 0);
+        shape.lineTo(BRAZIER_WIDTH / 2, BRAZIER_HEIGHT);
+        shape.lineTo(-BRAZIER_WIDTH / 2, BRAZIER_HEIGHT);
+        shape.closePath();
+        const opening = new THREE.Path();
+        opening.absarc(0, BRAZIER_OPENING_HEIGHT, BRAZIER_OPENING_RADIUS, 0, Math.PI * 2, true);
+        shape.holes.push(opening);
+        const panel = new THREE.Mesh(
+          new THREE.ExtrudeGeometry(shape, { depth: 0.11, bevelEnabled: false, curveSegments: 32 }),
+          brazierWood
+        );
+        panel.position.y = BRAZIER_BOTTOM;
+        panel.rotation.y = rotationY;
+        panel.castShadow = true;
+        panel.receiveShadow = true;
+        brazier.add(panel);
+        return panel;
+      }
+
+      function makeBentBrazierSheet(length, width, segmentsX, segmentsZ, thickness) {
+        const vertices = [];
+        const uvs = [];
+        const indices = [];
+        const columns = segmentsX + 1;
+        const layerSize = columns * (segmentsZ + 1);
+        for (let layer = 0; layer < 2; layer += 1) {
+          for (let row = 0; row <= segmentsZ; row += 1) {
+            for (let column = 0; column <= segmentsX; column += 1) {
+              const x = (column / segmentsX - 0.5) * length;
+              const z = (row / segmentsZ - 0.5) * width;
+              const normalizedX = x / (length / 2);
+              const normalizedZ = z / (width / 2);
+              const bend = 0.08 * (normalizedX * normalizedX + normalizedZ * normalizedZ) / 2;
+              vertices.push(x, bend - layer * thickness, z);
+              uvs.push(column / segmentsX, row / segmentsZ);
+            }
+          }
+        }
+        for (let row = 0; row < segmentsZ; row += 1) {
+          for (let column = 0; column < segmentsX; column += 1) {
+            const a = row * columns + column;
+            const b = a + 1;
+            const c = a + columns;
+            const d = c + 1;
+            indices.push(a, c, b, b, c, d);
+            indices.push(a + layerSize, b + layerSize, c + layerSize);
+            indices.push(b + layerSize, d + layerSize, c + layerSize);
+          }
+        }
+        const perimeter = [];
+        for (let column = 0; column <= segmentsX; column += 1) perimeter.push(column);
+        for (let row = 1; row <= segmentsZ; row += 1) perimeter.push(row * columns + segmentsX);
+        for (let column = segmentsX - 1; column >= 0; column -= 1) perimeter.push(segmentsZ * columns + column);
+        for (let row = segmentsZ - 1; row > 0; row -= 1) perimeter.push(row * columns);
+        for (let index = 0; index < perimeter.length; index += 1) {
+          const a = perimeter[index];
+          const b = perimeter[(index + 1) % perimeter.length];
+          indices.push(a, b, a + layerSize, b, b + layerSize, a + layerSize);
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+        geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+        geometry.setIndex(indices);
+        geometry.computeVertexNormals();
+        return geometry;
+      }
+
+      const brazierFront = makeBrazierEndPanel(Math.PI / 2);
+      brazierFront.position.x = -BRAZIER_LENGTH / 2;
+      const brazierBack = makeBrazierEndPanel(-Math.PI / 2);
+      brazierBack.position.x = BRAZIER_LENGTH / 2;
+
+      const brazierSideLength = BRAZIER_LENGTH - 0.22;
+      const brazierPlankGap = 0.012;
+      const brazierPlankHeight = (BRAZIER_HEIGHT - brazierPlankGap * 2) / 3;
+      for (const side of [-1, 1]) {
+        makeBox(
+          brazier,
+          [brazierSideLength, BRAZIER_HEIGHT, 0.1],
+          brazierDarkWood,
+          [0, BRAZIER_BOTTOM + BRAZIER_HEIGHT / 2, side * (BRAZIER_WIDTH / 2 - 0.08)]
+        );
+        for (let index = 0; index < 3; index += 1) {
+          makeBox(
+            brazier,
+            [brazierSideLength, brazierPlankHeight, 0.1],
+            brazierBoards[(index + (side > 0 ? 1 : 0)) % brazierBoards.length],
+            [
+              0,
+              BRAZIER_BOTTOM + brazierPlankHeight / 2 + index * (brazierPlankHeight + brazierPlankGap),
+              side * (BRAZIER_WIDTH / 2 - 0.025)
+            ]
+          );
+        }
+      }
+      makeBox(
+        brazier,
+        [brazierSideLength, 0.1, BRAZIER_WIDTH - 0.16],
+        brazierWood,
+        [0, BRAZIER_BOTTOM + 0.04, 0]
+      );
+
+      const brazierBore = new THREE.Mesh(
+        new THREE.CylinderGeometry(BRAZIER_OPENING_RADIUS * 0.96, BRAZIER_OPENING_RADIUS * 0.96, BRAZIER_LENGTH + 0.18, 32, 1, true),
+        brazierTubeMaterial
+      );
+      brazierBore.position.set(0, BRAZIER_BOTTOM + BRAZIER_OPENING_HEIGHT, 0);
+      brazierBore.rotation.z = Math.PI / 2;
+      brazierBore.material.side = THREE.DoubleSide;
+      brazierBore.castShadow = true;
+      brazier.add(brazierBore);
+      for (const x of [-BRAZIER_LENGTH / 2 - 0.025, BRAZIER_LENGTH / 2 + 0.025]) {
+        const portRim = new THREE.Mesh(
+          new THREE.TorusGeometry(BRAZIER_OPENING_RADIUS, 0.025, 8, 32),
+          brazierTubeMaterial
+        );
+        portRim.position.set(x, BRAZIER_BOTTOM + BRAZIER_OPENING_HEIGHT, 0);
+        portRim.rotation.y = Math.PI / 2;
+        portRim.castShadow = true;
+        brazier.add(portRim);
+      }
+
+      makeBox(
+        brazier,
+        [BRAZIER_LENGTH + 0.12, 0.12, BRAZIER_WIDTH + 0.12],
+        brazierWood,
+        [0, BRAZIER_BOTTOM + BRAZIER_HEIGHT + 0.03, 0]
+      );
+      makeBox(
+        brazier,
+        [BRAZIER_LENGTH - 0.16, 0.025, BRAZIER_WIDTH - 0.22],
+        brazierDarkWood,
+        [0, BRAZIER_BOTTOM + BRAZIER_HEIGHT + 0.096, 0]
+      );
+      for (const z of [-BRAZIER_WIDTH / 2 + 0.04, BRAZIER_WIDTH / 2 - 0.04]) {
+        makeBox(
+          brazier,
+          [BRAZIER_LENGTH - 0.12, 0.075, 0.08],
+          brazierWood,
+          [0, BRAZIER_BOTTOM + BRAZIER_HEIGHT + 0.12, z]
+        );
+      }
+      for (const x of [-BRAZIER_LENGTH / 2 + 0.04, BRAZIER_LENGTH / 2 - 0.04]) {
+        makeBox(
+          brazier,
+          [0.08, 0.075, BRAZIER_WIDTH - 0.12],
+          brazierWood,
+          [x, BRAZIER_BOTTOM + BRAZIER_HEIGHT + 0.12, 0]
+        );
+      }
+      const topSheet = new THREE.Mesh(
+        makeBentBrazierSheet(BRAZIER_LENGTH + 0.2, BRAZIER_WIDTH + 0.22, 32, 12, 0.025),
+        brazierSheetMaterial
+      );
+      topSheet.position.set(0, BRAZIER_BOTTOM + BRAZIER_HEIGHT + 0.16, 0);
+      topSheet.castShadow = true;
+      topSheet.receiveShadow = true;
+      brazier.add(topSheet);
+
+      const fireGroup = new THREE.Group();
+      fireGroup.position.set(-BRAZIER_LENGTH / 2 + 0.38, BRAZIER_BOTTOM + BRAZIER_OPENING_HEIGHT, 0);
+      fireGroup.scale.setScalar(0.4);
+      brazier.add(fireGroup);
+      const flameMaterials = [
+        new THREE.MeshStandardMaterial({ color: 0xee6329, emissive: 0xb63211, emissiveIntensity: 1.4, roughness: 0.55 }),
+        new THREE.MeshStandardMaterial({ color: 0xffad48, emissive: 0xf06a12, emissiveIntensity: 1.8, roughness: 0.48 }),
+        new THREE.MeshStandardMaterial({ color: 0xffe18b, emissive: 0xe9a932, emissiveIntensity: 1.5, roughness: 0.4 })
+      ];
+      const flameMeshes = [];
+      const flameSpecs = [
+        [0.39, 0.78, 0, 0.02, 0.02],
+        [0.28, 0.61, -0.1, 0.01, 0.015],
+        [0.23, 0.49, 0.13, -0.01, -0.01]
+      ];
+      for (let index = 0; index < flameSpecs.length; index += 1) {
+        const spec = flameSpecs[index];
+        const flame = new THREE.Mesh(new THREE.ConeGeometry(spec[0], spec[1], 9, 2), flameMaterials[index]);
+        flame.position.set(spec[2], spec[1] * 0.43, 0);
+        flame.rotation.z = spec[3];
+        flame.rotation.x = spec[4];
+        flame.castShadow = false;
+        fireGroup.add(flame);
+        flameMeshes.push(flame);
+      }
+
+      fireLight.position.copy(brazier.localToWorld(fireGroup.position.clone().add(new THREE.Vector3(0, 0.55, 0))));
+
+      const heatRingMaterial = new THREE.MeshBasicMaterial({
+        color: 0xd7a663,
+        transparent: true,
+        opacity: 0.24,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const heatRing = new THREE.Mesh(new THREE.RingGeometry(0.82, 0.86, 56), heatRingMaterial);
+      heatRing.rotation.x = -Math.PI / 2;
+      heatRing.position.set(brazierPosition.x, TABLE_TOP + 0.012, brazierPosition.z);
+      scene.add(heatRing);
+      const brazierRestPosition = brazier.position.clone();
+      const heatRingRestPosition = heatRing.position.clone();
+
+      const bamboo = new THREE.Group();
+      bamboo.position.set(-2.55, TABLE_TOP + 0.056, 0.35);
+      bamboo.rotation.y = BAMBOO_START_YAW;
+      scene.add(bamboo);
+
+      const bambooMaterial = new THREE.MeshStandardMaterial({
+        color: 0x8eaa67,
+        roughness: 0.48,
+        metalness: 0.02
+      });
+      const bambooNodeMaterial = new THREE.MeshStandardMaterial({
+        color: 0x4c633b,
+        roughness: 0.6,
+        metalness: 0.02,
+        transparent: true
+      });
+      const unheatedBambooColor = bambooMaterial.color.clone();
+      const cookedBambooColor = new THREE.Color(0xc69b69);
+      const unheatedNodeColor = bambooNodeMaterial.color.clone();
+      const cookedNodeColor = new THREE.Color(0x85663e);
+      function updateBambooColor(progress) {
+        bambooMaterial.color.copy(unheatedBambooColor).lerp(cookedBambooColor, progress);
+        bambooNodeMaterial.color.copy(unheatedNodeColor).lerp(cookedNodeColor, progress);
+        bambooMaterial.roughness = THREE.MathUtils.lerp(0.48, 0.52, progress);
+        bambooNodeMaterial.roughness = THREE.MathUtils.lerp(0.6, 0.62, progress);
+        for (const spot of bambooSpots) spot.mesh.material.opacity = progress * 0.86;
+      }
+
+      const bambooHitMaterial = new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: 0,
+        colorWrite: false,
+        depthWrite: false
+      });
+      const bambooEnds = [];
+      const bambooLength = 3.5;
+      const bambooRadius = 0.044;
+      const curveSegments = 64;
+      const radialSegments = 16;
+      const bambooBendScale = 0.7;
+      const bambooArchHeight = 0.33;
+      const bambooDepthBend = 0.11;
+      const maximumBambooArch = bambooBendScale * bambooArchHeight;
+      const nodePositions = [0.06, 0.25, 0.5, 0.75, 0.94];
+      const bambooNodes = [];
+      const ringNormal = new THREE.Vector3(0, 0, 1);
+      const straighteningPointTs = [0.41, 0.63, 0.85];
+      const straighteningProgress = [0, 0, 0];
+      const straighteningStarted = [false, false, false];
+      const straighteningDone = [false, false, false];
+      const straighteningClocks = [0, 0, 0];
+      const straighteningDuration = 0.55;
+      let bendAmount = 1;
+      let finalStraightenProgress = 0;
+
+      for (let index = 0; index < 2; index += 1) {
+        const end = new THREE.Mesh(new THREE.SphereGeometry(bambooRadius, 16, 12), bambooMaterial);
+        end.userData.bambooHitTarget = true;
+        end.castShadow = true;
+        bamboo.add(end);
+        bambooEnds.push(end);
+      }
+
+      function makeBambooCurve(amount, centeredInTube = false) {
+        const points = [];
+        const scaledBend = amount * bambooBendScale;
+        const archOffset = centeredInTube ? bambooArchHeight * scaledBend / 2 : 0;
+        for (let index = 0; index <= 8; index += 1) {
+          const t = index / 8;
+          const x = (t - 0.5) * bambooLength;
+          const localStraightening = straighteningPointTs.reduce((largest, target, regionIndex) => {
+            const distance = Math.abs(t - target);
+            const normalizedDistance = distance / 0.16;
+            const influence = Math.exp(-0.5 * normalizedDistance * normalizedDistance);
+            return Math.max(largest, straighteningProgress[regionIndex] * influence);
+          }, 0);
+          const localBend = scaledBend * (1 - localStraightening) * (1 - finalStraightenProgress);
+          const arch = Math.sin(Math.PI * t) * bambooArchHeight * localBend
+            - archOffset * (1 - finalStraightenProgress);
+          const depth = Math.sin(Math.PI * 2 * t) * bambooDepthBend * localBend;
+          points.push(new THREE.Vector3(x, arch, depth));
+        }
+        return new THREE.CatmullRomCurve3(points, false, "catmullrom", 0.35);
+      }
+
+      const initialCurve = makeBambooCurve(bendAmount);
+      const bambooBody = new THREE.Mesh(
+        new THREE.TubeGeometry(initialCurve, curveSegments, bambooRadius, radialSegments, false),
+        bambooMaterial
+      );
+      bambooBody.castShadow = true;
+      bambooBody.receiveShadow = true;
+      bamboo.add(bambooBody);
+
+      const bambooSpots = createBambooSpots(THREE, initialCurve, bambooRadius, 0);
+      for (const spot of bambooSpots) bamboo.add(spot.mesh);
+
+      const bambooHitBody = new THREE.Mesh(
+        new THREE.TubeGeometry(initialCurve, curveSegments, 0.19, 10, false),
+        bambooHitMaterial
+      );
+      bambooHitBody.userData.bambooHitTarget = true;
+      bamboo.add(bambooHitBody);
+
+      for (const t of nodePositions) {
+        const node = new THREE.Mesh(new THREE.TorusGeometry(bambooRadius, 0.004, 8, 24), bambooNodeMaterial);
+        const tangent = initialCurve.getTangentAt(t).normalize();
+        node.position.copy(initialCurve.getPointAt(t));
+        node.quaternion.setFromUnitVectors(ringNormal, tangent);
+        node.castShadow = true;
+        bamboo.add(node);
+        bambooNodes.push({ mesh: node, t: t });
+      }
+
+      function updateBambooGeometry(amount, centeredInTube = false) {
+        bendAmount = amount;
+        const curve = makeBambooCurve(amount, centeredInTube);
+        bambooBody.geometry.dispose();
+        bambooBody.geometry = new THREE.TubeGeometry(curve, curveSegments, bambooRadius, radialSegments, false);
+        bambooHitBody.geometry.dispose();
+        bambooHitBody.geometry = new THREE.TubeGeometry(curve, curveSegments, 0.19, 10, false);
+
+        for (const spot of bambooSpots) {
+          updateBambooSpot(THREE, spot, curve, bambooRadius);
+        }
+
+        for (const node of bambooNodes) {
+          node.mesh.position.copy(curve.getPointAt(node.t));
+          node.mesh.quaternion.setFromUnitVectors(ringNormal, curve.getTangentAt(node.t).normalize());
+        }
+        bambooEnds[0].position.copy(curve.getPointAt(0));
+        bambooEnds[1].position.copy(curve.getPointAt(1));
+      }
+
+      updateBambooGeometry(bendAmount);
+
+      const ham = new THREE.Group();
+      const hamLaydown = new THREE.Group();
+      hamLaydown.rotation.x = Math.PI / 2;
+      ham.add(hamLaydown);
+      const hamProfile = new THREE.Group();
+      hamProfile.rotation.z = -Math.PI / 2;
+      hamLaydown.add(hamProfile);
+
+      const hamMetalMaterial = new THREE.MeshStandardMaterial({
+        color: 0x73563c,
+        roughness: 0.44,
+        metalness: 0.72
+      });
+      const hamEdgeMaterial = new THREE.MeshStandardMaterial({
+        color: 0x302a23,
+        roughness: 0.62,
+        metalness: 0.78
+      });
+      const hamLeatherMaterial = new THREE.MeshStandardMaterial({
+        color: 0x30231b,
+        roughness: 0.94,
+        metalness: 0
+      });
+      const hamLeatherBandMaterial = new THREE.MeshStandardMaterial({
+        color: 0x49362b,
+        roughness: 0.9,
+        metalness: 0
+      });
+
+      const hamSilhouette = new THREE.Shape();
+      hamSilhouette.moveTo(-0.14, 1.58);
+      hamSilhouette.quadraticCurveTo(-0.18, 1.58, -0.18, 1.53);
+      hamSilhouette.lineTo(-0.18, -0.66);
+      hamSilhouette.quadraticCurveTo(-0.18, -0.77, -0.28, -0.81);
+      hamSilhouette.quadraticCurveTo(-0.45, -0.9, -0.47, -1.17);
+      hamSilhouette.quadraticCurveTo(-0.49, -1.38, -0.34, -1.52);
+      hamSilhouette.quadraticCurveTo(-0.29, -1.56, -0.25, -1.5);
+      hamSilhouette.quadraticCurveTo(-0.21, -1.4, -0.16, -1.3);
+      hamSilhouette.quadraticCurveTo(0, -1.08, 0.16, -1.3);
+      hamSilhouette.quadraticCurveTo(0.21, -1.4, 0.25, -1.5);
+      hamSilhouette.quadraticCurveTo(0.29, -1.56, 0.34, -1.52);
+      hamSilhouette.quadraticCurveTo(0.49, -1.38, 0.47, -1.17);
+      hamSilhouette.quadraticCurveTo(0.45, -0.9, 0.28, -0.81);
+      hamSilhouette.quadraticCurveTo(0.18, -0.77, 0.18, -0.66);
+      hamSilhouette.lineTo(0.18, 1.53);
+      hamSilhouette.quadraticCurveTo(0.18, 1.58, 0.14, 1.58);
+      hamSilhouette.closePath();
+
+      const hamBodyGeometry = new THREE.ExtrudeGeometry(hamSilhouette, {
+        depth: 0.2,
+        bevelEnabled: true,
+        bevelSegments: 2,
+        steps: 1,
+        bevelSize: 0.03,
+        bevelThickness: 0.03,
+        curveSegments: 3
+      });
+      hamBodyGeometry.translate(0, 0, -0.1);
+      const hamBody = new THREE.Mesh(hamBodyGeometry, [hamMetalMaterial, hamEdgeMaterial]);
+      hamBody.castShadow = true;
+      hamBody.receiveShadow = true;
+      hamProfile.add(hamBody);
+
+      const hamLeatherShape = new THREE.Shape();
+      hamLeatherShape.moveTo(-0.19, -0.38);
+      hamLeatherShape.quadraticCurveTo(-0.24, -0.38, -0.24, -0.33);
+      hamLeatherShape.lineTo(-0.24, 0.33);
+      hamLeatherShape.quadraticCurveTo(-0.24, 0.38, -0.19, 0.38);
+      hamLeatherShape.lineTo(0.19, 0.38);
+      hamLeatherShape.quadraticCurveTo(0.24, 0.38, 0.24, 0.33);
+      hamLeatherShape.lineTo(0.24, -0.33);
+      hamLeatherShape.quadraticCurveTo(0.24, -0.38, 0.19, -0.38);
+      hamLeatherShape.closePath();
+      const hamLeatherGeometry = new THREE.ExtrudeGeometry(hamLeatherShape, {
+        depth: 0.34,
+        bevelEnabled: true,
+        bevelSegments: 2,
+        steps: 1,
+        bevelSize: 0.018,
+        bevelThickness: 0.018,
+        curveSegments: 3
+      });
+      hamLeatherGeometry.translate(0, 0, -0.17);
+      const hamLeatherGrip = new THREE.Mesh(hamLeatherGeometry, hamLeatherMaterial);
+      hamLeatherGrip.position.y = 1.12;
+      hamLeatherGrip.castShadow = true;
+      hamLeatherGrip.receiveShadow = true;
+      hamProfile.add(hamLeatherGrip);
+
+      for (const y of [0.79, 0.95, 1.11, 1.27, 1.43]) {
+        const wrap = new THREE.Mesh(
+          new THREE.BoxGeometry(0.5, 0.022, 0.36),
+          hamLeatherBandMaterial
+        );
+        wrap.position.set(0, y, 0);
+        wrap.castShadow = true;
+        hamProfile.add(wrap);
+      }
+
+      ham.scale.setScalar(HAM_SCALE);
+      ham.visible = false;
+      scene.add(ham);
+
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+      const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(TABLE_TOP + 0.056));
+      const dragPoint = new THREE.Vector3();
+      const dragOffset = new THREE.Vector3();
+      let isDragging = false;
+      let bambooInTube = false;
+      let isBambooRoasting = false;
+      let phase = "idle";
+      let heatProgress = 0;
+      let animationClock = 0;
+      let phaseClock = 0;
+      let alignmentStart = new THREE.Vector3();
+      let alignmentTarget = new THREE.Vector3();
+      let alignmentRotationStart = 0;
+      let alignmentRotationTarget = 0;
+      const bambooOrbitOrigin = new THREE.Vector3();
+      const bambooOrbitAxisU = new THREE.Vector3();
+      const bambooOrbitAxisV = new THREE.Vector3();
+      const bambooOrbitProjectionU = new THREE.Vector2();
+      const bambooOrbitProjectionV = new THREE.Vector2();
+      let bambooOrbitProjectionDeterminant = 0;
+      let bambooOrbitClock = 0;
+      let toastTimer = 0;
+      let lastProgressValue = -1;
+      const assetTransitionDuration = 1.8;
+      const brazierTransitionStart = new THREE.Vector3();
+      const brazierTransitionEnd = new THREE.Vector3();
+      const heatRingTransitionStart = new THREE.Vector3();
+      const heatRingTransitionEnd = new THREE.Vector3();
+      const hamTransitionStart = new THREE.Vector3();
+      const hamTransitionEnd = new THREE.Vector3();
+      const hamRestPosition = new THREE.Vector3();
+      const hamActionStartPosition = new THREE.Vector3();
+      const hamActionTargetPosition = new THREE.Vector3();
+      const hamActionContact = new THREE.Vector3();
+      const hamJawOffsetLocal = new THREE.Vector3(-HAM_JAW_CENTER_LOCAL_OFFSET * HAM_SCALE, 0, 0);
+      let hamRestRotationY = 0;
+      let hamRestRotationZ = 0;
+      let hamActionStartRotationY = 0;
+      let hamActionStartRotationZ = 0;
+      let hamActionTargetRotationY = 0;
+      let hamActionTargetRotationZ = 0;
+      let hamActionClock = 0;
+      let assetTransitionClock = 0;
+      let isAssetTransitionActive = false;
+      let isHamActionActive = false;
+
+      function resize() {
+        const width = Math.max(1, host.clientWidth);
+        const height = Math.max(1, host.clientHeight);
+        camera.aspect = width / height;
+        const compactLayout = camera.aspect < 0.8;
+        camera.fov = compactLayout ? 52 : 36;
+        if (!isStageTransitionActive) {
+          camera.position.set(
+            compactLayout ? 10.8 : 0,
+            6.75,
+            compactLayout ? 0 : 10.8
+          );
+          camera.lookAt(0, 1.05, 0);
+        }
+        if (phase === "idle") bamboo.rotation.y = BAMBOO_START_YAW;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height, false);
+        updateFireMarker();
+        updateInteractionGuide();
+      }
+
+      function updateFireMarker() {
+        const markerPoint = brazier.localToWorld(new THREE.Vector3(
+          -BRAZIER_LENGTH / 2 - 0.18,
+          BRAZIER_BOTTOM + BRAZIER_OPENING_HEIGHT + 0.34,
+          0
+        )).project(camera);
+        const x = (markerPoint.x * 0.5 + 0.5) * host.clientWidth;
+        const y = (-markerPoint.y * 0.5 + 0.5) * host.clientHeight;
+        fireMarker.style.left = `${x}px`;
+        fireMarker.style.top = `${y}px`;
+        fireMarker.style.display = markerPoint.z >= -1 && markerPoint.z <= 1 ? "flex" : "none";
+      }
+
+      function updateInteractionGuide() {
+        const isVisible = phase === "idle" && !isDragging;
+        interactionGuide.classList.toggle("is-hidden", !isVisible);
+        if (!isVisible) return;
+
+        camera.updateMatrixWorld(true);
+        scene.updateMatrixWorld(true);
+        const rect = renderer.domElement.getBoundingClientRect();
+        const targetWorldPosition = brazier.localToWorld(new THREE.Vector3(
+          -BRAZIER_LENGTH / 2,
+          BRAZIER_BOTTOM + BRAZIER_OPENING_HEIGHT,
+          0
+        ));
+        const targetScreenPosition = projectWorldPosition(targetWorldPosition, rect)
+          .sub(new THREE.Vector2(rect.left, rect.top));
+        const bambooScreenPositions = getBambooScreenPositions(rect);
+        const bambooEndPositions = [
+          bambooScreenPositions[0],
+          bambooScreenPositions[bambooScreenPositions.length - 1]
+        ]
+          .map((position) => position.sub(new THREE.Vector2(rect.left, rect.top)));
+        const grabPosition = bambooEndPositions.reduce((closest, position) => (
+          position.distanceTo(targetScreenPosition) < closest.distanceTo(targetScreenPosition)
+            ? position
+            : closest
+        ));
+        const direction = targetScreenPosition.clone().sub(grabPosition);
+        const distance = direction.length();
+        if (distance < 1) return;
+        direction.divideScalar(distance);
+
+        const inset = Math.min(20, distance / 3);
+        const start = grabPosition.clone().addScaledVector(direction, inset);
+        const end = targetScreenPosition.clone().addScaledVector(direction, -inset);
+        const midpoint = start.clone().add(end).multiplyScalar(.5);
+        const control = midpoint.clone().add(new THREE.Vector2(0, -Math.min(34, distance * .16)));
+        guideArrow.setAttribute("d", `M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`);
+        guideGrab.setAttribute("transform", `translate(${grabPosition.x} ${grabPosition.y})`);
+        interactionGuide.setAttribute("viewBox", `0 0 ${host.clientWidth} ${host.clientHeight}`);
+      }
+
+      function updateStraighteningGuide() {
+        const isVisible = phase === "pressing" && !isAssetTransitionActive;
+        straighteningGuide.classList.toggle("is-hidden", !isVisible);
+        straighteningGuide.classList.toggle("is-busy", isHamActionActive);
+        if (!isVisible) return;
+
+        camera.updateMatrixWorld(true);
+        scene.updateMatrixWorld(true);
+        const rect = renderer.domElement.getBoundingClientRect();
+        const curve = makeBambooCurve(1);
+        straighteningGuideTargets.forEach((target, index) => {
+          const worldPosition = bamboo.localToWorld(curve.getPointAt(straighteningPointTs[index]));
+          const screenPosition = projectWorldPosition(worldPosition, rect);
+          target.setAttribute(
+            "transform",
+            `translate(${screenPosition.x - rect.left} ${screenPosition.y - rect.top})`
+          );
+          target.classList.toggle("is-selected", straighteningStarted[index]);
+        });
+        straighteningGuide.setAttribute("viewBox", `0 0 ${host.clientWidth} ${host.clientHeight}`);
+      }
+
+      function syncProgress() {
+        const percent = Math.round(heatProgress * 100);
+        if (percent !== lastProgressValue) {
+          gaugeFill.style.width = `${percent}%`;
+          gaugeValue.innerHTML = `${percent}<small>%</small>`;
+          gaugeTrack.setAttribute("aria-valuenow", String(percent));
+          lastProgressValue = percent;
+        }
+      }
+
+      function setInstruction(text) {
+        instruction.textContent = text;
+      }
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add("is-visible");
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 2400);
+      }
+
+      function getBambooLocalPosition() {
+        return brazier.worldToLocal(new THREE.Vector3(
+          bamboo.position.x,
+          TUBE_CENTER_Y,
+          bamboo.position.z
+        ));
+      }
+
+      function projectWorldPosition(worldPosition, rect) {
+        const projectedPosition = worldPosition.clone().project(camera);
+        return new THREE.Vector2(
+          rect.left + (projectedPosition.x + 1) * rect.width / 2,
+          rect.top + (1 - projectedPosition.y) * rect.height / 2
+        );
+      }
+
+      function configureBambooOrbit() {
+        camera.updateMatrixWorld(true);
+        scene.updateMatrixWorld(true);
+        const rect = renderer.domElement.getBoundingClientRect();
+        bambooOrbitOrigin.copy(bamboo.position);
+        bambooOrbitAxisU.set(0, 1, 0).applyQuaternion(brazier.quaternion).normalize();
+        bambooOrbitAxisV.set(0, 0, 1).applyQuaternion(brazier.quaternion).normalize();
+        const originWorldPosition = bamboo.getWorldPosition(new THREE.Vector3());
+        const originScreenPosition = projectWorldPosition(originWorldPosition, rect);
+        bambooOrbitProjectionU.copy(projectWorldPosition(
+          originWorldPosition.clone().add(bambooOrbitAxisU),
+          rect
+        ).sub(originScreenPosition));
+        bambooOrbitProjectionV.copy(projectWorldPosition(
+          originWorldPosition.clone().add(bambooOrbitAxisV),
+          rect
+        ).sub(originScreenPosition));
+        bambooOrbitProjectionDeterminant = bambooOrbitProjectionU.x * bambooOrbitProjectionV.y
+          - bambooOrbitProjectionV.x * bambooOrbitProjectionU.y;
+        bambooOrbitClock = 0;
+      }
+
+      function applyBambooOrbit(angle) {
+        const screenX = Math.cos(angle) * BAMBOO_ORBIT_RADIUS_PX;
+        const screenY = Math.sin(angle) * BAMBOO_ORBIT_RADIUS_PX;
+        if (Math.abs(bambooOrbitProjectionDeterminant) < 1e-6) {
+          bamboo.position.copy(bambooOrbitOrigin);
+          return;
+        }
+
+        const coefficientU = (
+          screenX * bambooOrbitProjectionV.y - bambooOrbitProjectionV.x * screenY
+        ) / bambooOrbitProjectionDeterminant;
+        const coefficientV = (
+          bambooOrbitProjectionU.x * screenY - screenX * bambooOrbitProjectionU.y
+        ) / bambooOrbitProjectionDeterminant;
+        bamboo.position.copy(bambooOrbitOrigin)
+          .addScaledVector(bambooOrbitAxisU, coefficientU)
+          .addScaledVector(bambooOrbitAxisV, coefficientV);
+      }
+
+      function getBambooScreenPositions(rect) {
+        scene.updateMatrixWorld(true);
+        return makeBambooCurve(bendAmount, bambooInTube)
+          .getPoints(BAMBOO_RECOGNITION_SEGMENTS)
+          .map((point) => projectWorldPosition(bamboo.localToWorld(point), rect));
+      }
+
+      function distanceToSegment(point, start, end) {
+        const segmentX = end.x - start.x;
+        const segmentY = end.y - start.y;
+        const segmentLengthSquared = segmentX * segmentX + segmentY * segmentY;
+        const projection = segmentLengthSquared === 0
+          ? 0
+          : THREE.MathUtils.clamp(
+            ((point.x - start.x) * segmentX + (point.y - start.y) * segmentY) / segmentLengthSquared,
+            0,
+            1
+          );
+        return Math.hypot(
+          point.x - (start.x + projection * segmentX),
+          point.y - (start.y + projection * segmentY)
+        );
+      }
+
+      function isBambooNearTubeOpening(previousPositions, currentPositions, rect) {
+        const openingPosition = brazier.localToWorld(new THREE.Vector3(
+          -BRAZIER_LENGTH / 2,
+          BRAZIER_BOTTOM + BRAZIER_OPENING_HEIGHT,
+          0
+        ));
+        const openingScreenPosition = projectWorldPosition(openingPosition, rect);
+        for (let index = 0; index < currentPositions.length; index += 1) {
+          if (distanceToSegment(
+            openingScreenPosition,
+            previousPositions[index],
+            currentPositions[index]
+          ) <= TUBE_ENTRY_SNAP_RADIUS_PX) {
+            return true;
+          }
+          if (index < currentPositions.length - 1 && distanceToSegment(
+            openingScreenPosition,
+            currentPositions[index],
+            currentPositions[index + 1]
+          ) <= TUBE_ENTRY_SNAP_RADIUS_PX) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function isInTubeCorridor(localPosition) {
+        return Math.abs(localPosition.x) < BRAZIER_LENGTH / 2 - 0.15
+          && Math.abs(localPosition.z) < BRAZIER_OPENING_RADIUS - bambooRadius - 0.02;
+      }
+
+      function isBambooInsideTube(localPosition) {
+        const yawDifference = Math.atan2(
+          Math.sin(bamboo.rotation.y - BRAZIER_YAW),
+          Math.cos(bamboo.rotation.y - BRAZIER_YAW)
+        );
+        return Math.abs(yawDifference) < 0.08 && isInTubeCorridor(localPosition);
+      }
+
+      function setBambooTubeState(isInsideTube) {
+        if (bambooInTube === isInsideTube) return;
+        bambooInTube = isInsideTube;
+        updateBambooGeometry(bendAmount, bambooInTube);
+      }
+
+      function snapBambooToTube() {
+        bamboo.position.copy(brazier.localToWorld(new THREE.Vector3(
+          TUBE_ENTRY_LOCAL_X,
+          BRAZIER_BOTTOM + BRAZIER_OPENING_HEIGHT,
+          0
+        )));
+        bamboo.rotation.y = BRAZIER_YAW;
+        bamboo.position.y = TUBE_CENTER_Y;
+        setBambooTubeState(true);
+        configureBambooOrbit();
+      }
+
+      function updatePointer(event) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        camera.updateMatrixWorld(true);
+        scene.updateMatrixWorld(true);
+        raycaster.setFromCamera(pointer, camera);
+      }
+
+      function pointerHitsBamboo(event) {
+        updatePointer(event);
+        return raycaster.intersectObjects(bamboo.children, true).length > 0;
+      }
+
+      function pointOnDragPlane(event, target) {
+        updatePointer(event);
+        return raycaster.ray.intersectPlane(dragPlane, target);
+      }
+
+      function beginHeating() {
+        phase = "heating";
+        heatProgress = 0;
+        lastProgressValue = -1;
+        isBambooRoasting = true;
+        gestureNote.classList.add("is-hidden");
+        gaugeHint.textContent = "대나무를 원통 안에서 굽고 있어요";
+        gaugeState.textContent = "가열 중";
+        setInstruction("대나무를 원통 안에 둔 채 기다려주세요. 놓으면 처음부터 다시 시작합니다.");
+        fireMarker.classList.add("is-hot");
+        updateBambooColor(0);
+        syncProgress();
+      }
+
+      function beginAlignment() {
+        phase = "aligning";
+        phaseClock = 0;
+        isBambooRoasting = false;
+        fireMarker.classList.remove("is-hot");
+        if (bambooInTube) {
+          setBambooTubeState(false);
+          bamboo.position.y -= maximumBambooArch / 2;
+        }
+        alignmentStart.copy(bamboo.position);
+        alignmentTarget.set(0, TABLE_TOP + 0.056, camera.aspect < 0.8 ? 0 : 1.28);
+        alignmentRotationStart = bamboo.rotation.y;
+        alignmentRotationTarget = camera.aspect < 0.8 ? Math.PI / 2 : 0;
+        gaugeHint.textContent = "정면으로 대나무를 정렬하고 있어요";
+        gaugeState.textContent = "정렬 중";
+        setInstruction("가열이 끝났어요. 대나무를 정면으로 가져옵니다.");
+      }
+
+      function finishAlignment() {
+        phase = "pressing";
+        phaseClock = 0;
+        gaugeCard.classList.add("is-hidden");
+        setInstruction("도구를 준비하고 있습니다.");
+        startAssetTransition();
+      }
+
+      function finishStraightening() {
+        phase = "complete";
+        finalStraightenProgress = 1;
+        updateBambooGeometry(1);
+        completeScreen.classList.add("is-visible");
+        nextButton.disabled = false;
+        setInstruction("대나무를 완전히 곧게 폈습니다.");
+      }
+
+      function registerStraighteningDoubleClick(regionIndex) {
+        if (phase !== "pressing") return;
+        if (regionIndex < 0 || regionIndex >= straighteningStarted.length) return;
+        if (straighteningStarted[regionIndex] || isHamActionActive) return;
+        straighteningStarted[regionIndex] = true;
+        startHamAction(regionIndex);
+      }
+
+      function resetGame() {
+        phase = "idle";
+        heatProgress = 0;
+        phaseClock = 0;
+        bendAmount = 1;
+        finalStraightenProgress = 0;
+        straighteningProgress.fill(0);
+        straighteningStarted.fill(false);
+        straighteningDone.fill(false);
+        straighteningClocks.fill(0);
+        isHamActionActive = false;
+        hamActionClock = 0;
+        bambooInTube = false;
+        isBambooRoasting = false;
+        bambooOrbitClock = 0;
+        isAssetTransitionActive = false;
+        assetTransitionClock = 0;
+        brazier.position.copy(brazierRestPosition);
+        heatRing.position.copy(heatRingRestPosition);
+        fireLight.position.copy(brazier.localToWorld(
+          fireGroup.position.clone().add(new THREE.Vector3(0, 0.55, 0))
+        ));
+        ham.visible = false;
+        bamboo.position.set(-2.55, TABLE_TOP + 0.056, 0.35);
+        bamboo.rotation.set(0, BAMBOO_START_YAW, 0);
+        updateBambooGeometry(1, false);
+        updateBambooColor(0);
+        completeScreen.classList.remove("is-visible");
+        nextButton.disabled = true;
+        gaugeCard.classList.remove("is-hidden");
+        fireMarker.classList.remove("is-hot");
+        gaugeHint.textContent = "대나무를 원통 안에 넣어주세요";
+        gaugeState.textContent = "가열 준비";
+        gestureNote.classList.remove("is-hidden");
+        setInstruction("대나무를 잡아 화로의 원통 입구에 넣어주세요.");
+        lastProgressValue = -1;
+        syncProgress();
+        toast.classList.remove("is-visible");
+        updateInteractionGuide();
+        updateStraighteningGuide();
+      }
+
+      straighteningGuide.addEventListener("dblclick", (event) => {
+        const target = event.target.closest("[data-region-index]");
+        if (!target) return;
+        event.preventDefault();
+        event.stopPropagation();
+        registerStraighteningDoubleClick(Number(target.getAttribute("data-region-index")));
+      });
+
+      renderer.domElement.addEventListener("pointerdown", (event) => {
+        if (phase !== "idle" || !pointerHitsBamboo(event)) return;
+
+        const point = pointOnDragPlane(event, dragPoint);
+        if (!point) return;
+        isDragging = true;
+        renderer.domElement.setPointerCapture(event.pointerId);
+        dragOffset.set(bamboo.position.x - point.x, 0, bamboo.position.z - point.z);
+        document.body.classList.add("is-dragging");
+        gestureNote.classList.add("is-hidden");
+        interactionGuide.classList.add("is-hidden");
+        event.preventDefault();
+      });
+
+      renderer.domElement.addEventListener("pointermove", (event) => {
+        if (!isDragging || (phase !== "idle" && phase !== "heating")) return;
+        if (phase === "heating" && bambooInTube) return;
+        const point = pointOnDragPlane(event, dragPoint);
+        if (!point) return;
+        const canvasRect = renderer.domElement.getBoundingClientRect();
+        const previousBambooPositions = getBambooScreenPositions(canvasRect);
+        bamboo.position.x = THREE.MathUtils.clamp(point.x + dragOffset.x, -3.08, 3.08);
+        bamboo.position.z = THREE.MathUtils.clamp(point.z + dragOffset.z, -1.75, 1.75);
+        camera.updateMatrixWorld(true);
+        const currentBambooPositions = getBambooScreenPositions(canvasRect);
+        let localPosition = getBambooLocalPosition();
+        if (!bambooInTube && isBambooNearTubeOpening(
+          previousBambooPositions,
+          currentBambooPositions,
+          canvasRect
+        )) {
+          snapBambooToTube();
+          localPosition = getBambooLocalPosition();
+        }
+        const insideTube = isBambooInsideTube(localPosition);
+        setBambooTubeState(insideTube);
+        if (insideTube) {
+          bamboo.position.y = TUBE_CENTER_Y;
+          if (phase === "idle") beginHeating();
+          isBambooRoasting = true;
+          fireMarker.classList.add("is-hot");
+          gaugeHint.textContent = "대나무를 원통 안에서 굽고 있어요";
+          gaugeState.textContent = "가열 중";
+        } else {
+          bamboo.position.y = TABLE_TOP + 0.056;
+          isBambooRoasting = false;
+          fireMarker.classList.remove("is-hot");
+          if (phase === "heating") {
+            gaugeHint.textContent = "원통 안에 다시 넣으면 가열을 이어갑니다";
+            gaugeState.textContent = "일시 정지";
+            setInstruction("가열을 계속하려면 대나무를 원통 안에 두세요. 놓으면 처음부터 다시 시작합니다.");
+          } else {
+            gaugeHint.textContent = "대나무를 원통 안에 넣어주세요";
+            gaugeState.textContent = "가열 준비";
+            setInstruction("대나무를 잡아 화로의 원통 입구에 넣어주세요.");
+          }
+        }
+      });
+
+      function endDrag(event) {
+        if (!isDragging) return;
+        isDragging = false;
+        document.body.classList.remove("is-dragging");
+        if (renderer.domElement.hasPointerCapture(event.pointerId)) {
+          renderer.domElement.releasePointerCapture(event.pointerId);
+        }
+        if (phase === "idle" || phase === "heating") resetGame();
+      }
+
+      renderer.domElement.addEventListener("pointerup", endDrag);
+      renderer.domElement.addEventListener("pointercancel", endDrag);
+      renderer.domElement.addEventListener("lostpointercapture", endDrag);
+
+      document.getElementById("retry-button").addEventListener("click", resetGame);
+      const nextButton = document.getElementById("next-button");
+      nextButton.addEventListener("click", startStageTransition);
+
+      const clock = new THREE.Clock();
+      const STAGE_TRANSITION_DURATION = 1.15;
+      const stageTransitionStartPosition = new THREE.Vector3();
+      const stageTransitionEndPosition = new THREE.Vector3();
+      const stageTransitionStartTarget = new THREE.Vector3();
+      const stageTransitionEndTarget = new THREE.Vector3(-0.5, TABLE_TOP + 0.306, 1.28);
+      const stageTransitionTarget = new THREE.Vector3();
+      const stageTransitionDirection = new THREE.Vector3();
+      const stageTransitionOffset = new THREE.Vector3();
+      let stageTransitionClock = 0;
+      let isStageTransitionActive = false;
+
+      function easeInOutCubic(value) {
+        return value < 0.5
+          ? 4 * value * value * value
+          : 1 - Math.pow(-2 * value + 2, 3) / 2;
+      }
+
+      function startStageTransition() {
+        if (isStageTransitionActive) return;
+        isStageTransitionActive = true;
+        stageTransitionClock = 0;
+        stageTransitionStartPosition.copy(camera.position);
+        camera.getWorldDirection(stageTransitionDirection);
+        stageTransitionStartTarget.copy(camera.position)
+          .addScaledVector(stageTransitionDirection, 10);
+
+        const distance = 5.3 / (
+          2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect
+        );
+        stageTransitionOffset.set(
+          0,
+          distance * Math.sin(THREE.MathUtils.degToRad(18)),
+          distance * Math.cos(THREE.MathUtils.degToRad(18))
+        );
+        stageTransitionEndPosition.copy(stageTransitionEndTarget).add(stageTransitionOffset);
+        nextButton.disabled = true;
+      }
+
+      function updateStageTransition(delta) {
+        if (!isStageTransitionActive) return;
+        stageTransitionClock = Math.min(
+          stageTransitionClock + delta,
+          STAGE_TRANSITION_DURATION
+        );
+        const amount = easeInOutCubic(stageTransitionClock / STAGE_TRANSITION_DURATION);
+        camera.position.lerpVectors(
+          stageTransitionStartPosition,
+          stageTransitionEndPosition,
+          amount
+        );
+        camera.lookAt(
+          stageTransitionTarget.lerpVectors(
+            stageTransitionStartTarget,
+            stageTransitionEndTarget,
+            amount
+          )
+        );
+        if (stageTransitionClock >= STAGE_TRANSITION_DURATION) {
+          isStageTransitionActive = false;
+          if (window.parent !== window) {
+            window.parent.postMessage({ type: "stage-navigation", stage: "stage2" }, "*");
+          } else {
+            document.getElementById("stage-transition-curtain").classList.add("is-visible");
+            window.setTimeout(() => {
+              window.location.href = "stage2.html";
+            }, 300);
+          }
+        }
+      }
+
+      function interpolateAngle(start, end, amount) {
+        const difference = Math.atan2(Math.sin(end - start), Math.cos(end - start));
+        return start + difference * amount;
+      }
+
+      function getHamJawOffset(rotationY, rotationZ) {
+        const orientation = new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(0, rotationY, rotationZ, ham.rotation.order)
+        );
+        return hamJawOffsetLocal.clone().applyQuaternion(orientation);
+      }
+
+      function setHamJawAtContact(rotationY, rotationZ) {
+        ham.rotation.set(0, rotationY, rotationZ);
+        const jawOffset = hamJawOffsetLocal.clone().applyQuaternion(ham.quaternion);
+        ham.position.copy(hamActionContact).sub(jawOffset);
+      }
+
+      function startHamAction(regionIndex) {
+        const curve = makeBambooCurve(1);
+        const contactT = straighteningPointTs[regionIndex];
+        hamActionContact.copy(bamboo.localToWorld(curve.getPointAt(contactT)));
+        hamActionStartPosition.copy(ham.position);
+        hamActionStartRotationY = ham.rotation.y;
+        hamActionStartRotationZ = ham.rotation.z;
+        const bambooTangent = curve.getTangentAt(contactT).applyQuaternion(bamboo.quaternion);
+        hamActionTargetRotationY = Math.atan2(-bambooTangent.z, bambooTangent.x);
+        hamActionTargetRotationZ = hamRestRotationZ + HAM_ACTION_ROLL;
+        const jawOffset = getHamJawOffset(
+          hamActionTargetRotationY,
+          hamActionTargetRotationZ
+        );
+        hamActionTargetPosition.copy(hamActionContact).sub(jawOffset);
+        hamActionClock = 0;
+        isHamActionActive = true;
+      }
+
+      function updateHamAction(delta) {
+        if (!isHamActionActive) return;
+        const twistStart = HAM_ACTION_APPROACH_DURATION;
+        const returnStart = twistStart + HAM_ACTION_TWIST_DURATION;
+        const duration = returnStart + HAM_ACTION_RETURN_DURATION;
+        hamActionClock = Math.min(hamActionClock + delta, duration);
+
+        if (hamActionClock <= twistStart) {
+          const amount = easeInOutCubic(hamActionClock / twistStart);
+          ham.position.lerpVectors(hamActionStartPosition, hamActionTargetPosition, amount);
+          ham.rotation.set(
+            0,
+            interpolateAngle(hamActionStartRotationY, hamActionTargetRotationY, amount),
+            interpolateAngle(hamActionStartRotationZ, hamActionTargetRotationZ, amount)
+          );
+        } else if (hamActionClock <= returnStart) {
+          const amount = (hamActionClock - twistStart) / HAM_ACTION_TWIST_DURATION;
+          const angle = Math.sin(amount * Math.PI * 2 * HAM_TWIST_CYCLES) * HAM_TWIST_ANGLE;
+          setHamJawAtContact(hamActionTargetRotationY, hamActionTargetRotationZ + angle);
+        } else {
+          const amount = easeInOutCubic(
+            (hamActionClock - returnStart) / HAM_ACTION_RETURN_DURATION
+          );
+          ham.position.lerpVectors(hamActionTargetPosition, hamRestPosition, amount);
+          ham.rotation.set(
+            0,
+            interpolateAngle(hamActionTargetRotationY, hamRestRotationY, amount),
+            interpolateAngle(hamActionTargetRotationZ, hamRestRotationZ, amount)
+          );
+        }
+
+        if (hamActionClock >= duration) {
+          ham.position.copy(hamRestPosition);
+          ham.rotation.set(0, hamRestRotationY, hamRestRotationZ);
+          isHamActionActive = false;
+        }
+      }
+
+      function startAssetTransition() {
+        const screenRight = new THREE.Vector3(1, 0, 0)
+          .applyQuaternion(camera.quaternion);
+        screenRight.y = 0;
+        screenRight.normalize();
+
+        brazierTransitionStart.copy(brazier.position);
+        brazierTransitionEnd.copy(brazier.position).addScaledVector(screenRight, 8);
+        heatRingTransitionStart.copy(heatRing.position);
+        heatRingTransitionEnd.copy(heatRing.position).addScaledVector(screenRight, 8);
+
+        hamTransitionEnd.copy(alignmentTarget).addScaledVector(screenRight, 2.85);
+        hamTransitionEnd.y = TABLE_TOP + 0.1;
+        hamTransitionStart.copy(hamTransitionEnd).addScaledVector(screenRight, 9);
+        ham.position.copy(hamTransitionStart);
+        hamRestPosition.copy(hamTransitionEnd);
+        hamRestRotationY = Math.atan2(-screenRight.z, screenRight.x);
+        hamRestRotationZ = 0;
+        ham.rotation.set(0, hamRestRotationY, hamRestRotationZ);
+        ham.visible = true;
+
+        assetTransitionClock = 0;
+        isAssetTransitionActive = true;
+      }
+
+      function updateAssetTransition(delta) {
+        if (!isAssetTransitionActive) return;
+        assetTransitionClock = Math.min(assetTransitionClock + delta, assetTransitionDuration);
+        const amount = assetTransitionClock / assetTransitionDuration;
+        const eased = easeInOutCubic(amount);
+        brazier.position.lerpVectors(brazierTransitionStart, brazierTransitionEnd, eased);
+        heatRing.position.lerpVectors(heatRingTransitionStart, heatRingTransitionEnd, eased);
+        ham.position.lerpVectors(hamTransitionStart, hamTransitionEnd, eased);
+        fireLight.position.copy(brazier.localToWorld(
+          fireGroup.position.clone().add(new THREE.Vector3(0, 0.55, 0))
+        ));
+        if (amount >= 1) {
+          isAssetTransitionActive = false;
+          if (phase === "pressing") {
+            setInstruction("표시된 세 원을 각각 더블클릭해 해당 부분을 곧게 펴주세요.");
+          }
+        }
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        const delta = Math.min(clock.getDelta(), 0.05);
+        animationClock += delta;
+        updateAssetTransition(delta);
+        updateStageTransition(delta);
+
+        const flicker = Math.sin(animationClock * 8) * 0.045 + Math.sin(animationClock * 13) * 0.025;
+        fireGroup.scale.set(0.4 * (1 + flicker), 0.4 * (1 + flicker * 1.6), 0.4 * (1 + flicker));
+        fireGroup.rotation.y = Math.sin(animationClock * 2.8) * 0.08;
+        flameMeshes[1].rotation.z = Math.sin(animationClock * 4) * 0.08;
+        fireLight.intensity = 25 + Math.sin(animationClock * 11) * 3.5;
+        heatRingMaterial.opacity = 0.19 + (Math.sin(animationClock * 2.4) + 1) * 0.035;
+
+        if (phase === "heating" && isDragging && isBambooRoasting) {
+          heatProgress = Math.min(1, heatProgress + delta / 4.5);
+          bambooOrbitClock += delta;
+          applyBambooOrbit(bambooOrbitClock * Math.PI * 2 * BAMBOO_ORBIT_FREQUENCY_HZ);
+          updateBambooColor(heatProgress);
+          syncProgress();
+          if (heatProgress >= 1) beginAlignment();
+        } else if (phase === "aligning") {
+          phaseClock += delta;
+          const amount = Math.min(phaseClock / 1.05, 1);
+          const eased = easeInOutCubic(amount);
+          bamboo.position.lerpVectors(alignmentStart, alignmentTarget, eased);
+          bamboo.rotation.y = alignmentRotationStart + (alignmentRotationTarget - alignmentRotationStart) * eased;
+          if (amount >= 1) finishAlignment();
+        } else if (phase === "pressing") {
+          updateHamAction(delta);
+          let geometryChanged = false;
+          for (let index = 0; index < straighteningStarted.length; index += 1) {
+            if (!straighteningStarted[index] || straighteningDone[index]) continue;
+            straighteningClocks[index] = Math.min(
+              straighteningClocks[index] + delta,
+              straighteningDuration
+            );
+            straighteningProgress[index] = MAX_LOCAL_STRAIGHTENING
+              * easeInOutCubic(straighteningClocks[index] / straighteningDuration);
+            straighteningDone[index] = straighteningClocks[index] >= straighteningDuration;
+            geometryChanged = true;
+          }
+          if (geometryChanged) updateBambooGeometry(1);
+          if (straighteningDone.every(Boolean) && !isHamActionActive) {
+            phase = "straightening";
+            phaseClock = 0;
+            setInstruction("대나무를 완전히 곧게 펴고 있습니다.");
+          }
+        } else if (phase === "straightening") {
+          phaseClock += delta;
+          const amount = Math.min(phaseClock / 0.9, 1);
+          finalStraightenProgress = easeInOutCubic(amount);
+          updateBambooGeometry(1);
+          if (amount >= 1) finishStraightening();
+        }
+
+        updateStraighteningGuide();
+        updateFireMarker();
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+      animate();
+      })();
+    }).catch((error) => {
+      console.error("Three.js failed to load; the 3D workshop could not start.", error);
+      errorScreen.classList.add("is-visible");
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1037 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>대나무 공방 - 4단계 먹금칠</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f2ead8;
+      --gold: #d7ad6c;
+      --panel: rgba(25, 34, 31, .84);
+      --line: rgba(232, 214, 174, .18);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #17211e;
+      color: var(--ink);
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    }
+
+    button { font: inherit; }
+
+    #scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    #scene canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: default;
+    }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(13, 20, 18, .83) 0%, rgba(13, 20, 18, .55) 29%, transparent 58%),
+        linear-gradient(0deg, rgba(11, 17, 15, .78), transparent 34%, rgba(11, 17, 15, .3));
+    }
+
+    #rotation-hint {
+      position: fixed;
+      z-index: 2;
+      width: 130px;
+      color: #fff;
+      text-align: center;
+      font-size: 10px;
+      line-height: 1.4;
+      pointer-events: none;
+      filter: drop-shadow(0 0 4px rgba(255, 255, 255, .45));
+    }
+
+    #rotation-hint svg { display: block; width: 110px; height: 66px; margin: auto; }
+    #rotation-hint path {
+      fill: none;
+      stroke: #fff;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    #rotation-hint .hint-arrow { stroke-dasharray: 5 6; }
+    #rotation-hint .hint-arrows { animation: hint-pulse 1.65s ease-in-out infinite; }
+    #rotation-hint .hint-hand { animation: hint-drag 2s ease-in-out infinite; }
+    @keyframes hint-pulse {
+      0%, 100% { opacity: .58; }
+      50% { opacity: 1; }
+    }
+    @keyframes hint-drag {
+      0%, 100% { transform: translateX(-10px); }
+      50% { transform: translateX(10px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #rotation-hint .hint-arrows, #rotation-hint .hint-hand { animation: none; }
+    }
+
+    #interface {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .topbar {
+      position: absolute;
+      top: 26px;
+      left: clamp(24px, 4.2vw, 66px);
+      right: clamp(24px, 4.2vw, 66px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 39px;
+      height: 39px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .65);
+      border-radius: 50%;
+      color: var(--gold);
+      font-family: Georgia, serif;
+      font-size: 19px;
+      line-height: 1;
+    }
+
+    .brand-copy { display: grid; gap: 3px; }
+
+    .brand-copy small {
+      color: var(--gold);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .22em;
+    }
+
+    .brand-copy strong {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: .08em;
+    }
+
+    .stage-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px 9px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(21, 29, 26, .64);
+      color: #e8dfcc;
+      font-size: 12px;
+      letter-spacing: .04em;
+      backdrop-filter: blur(12px);
+    }
+
+    .stage-chip b {
+      display: grid;
+      width: 27px;
+      height: 27px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--gold);
+      color: #20231c;
+      font-family: Georgia, serif;
+      font-size: 12px;
+    }
+
+    .intro {
+      position: absolute;
+      top: clamp(145px, 25vh, 220px);
+      left: clamp(44px, 7vw, 112px);
+      width: min(480px, 40vw);
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 19px;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .2em;
+    }
+
+    .eyebrow::before {
+      width: 24px;
+      height: 1px;
+      background: var(--gold);
+      content: "";
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Batang", "Nanum Myeongjo", "Malgun Gothic", serif;
+      font-size: clamp(34px, 3.5vw, 49px);
+      font-weight: 500;
+      letter-spacing: -.08em;
+      line-height: 1.35;
+      text-shadow: 0 3px 24px rgba(0, 0, 0, .35);
+    }
+
+    h1 em {
+      color: #d9c294;
+      font-style: normal;
+    }
+
+    #instruction {
+      min-height: 48px;
+      margin: 18px 0 0;
+      color: #c7c7b8;
+      font-size: 13px;
+      letter-spacing: -.025em;
+      line-height: 1.8;
+      word-break: keep-all;
+    }
+
+    .gesture-note {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      margin-top: 24px;
+      color: #a7ad9e;
+      font-size: 11px;
+      letter-spacing: .015em;
+    }
+
+    .cut-icon {
+      display: grid;
+      width: 31px;
+      height: 31px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .6);
+      border-radius: 50%;
+      color: var(--gold);
+      font-size: 14px;
+    }
+
+    .bottom-area {
+      position: absolute;
+      right: 24px;
+      bottom: 30px;
+      width: min(240px, 40vw);
+      display: flex;
+      justify-content: center;
+    }
+
+    .desktop-layout .bottom-area { width: min(200px, 24vw); }
+
+    .progress-card {
+      width: min(520px, 100%);
+      padding: 17px 21px 15px;
+      border: 1px solid rgba(221, 204, 163, .22);
+      border-radius: 14px;
+      background: var(--panel);
+      box-shadow: 0 18px 55px rgba(0, 0, 0, .28);
+      backdrop-filter: blur(16px);
+    }
+
+    @media (max-width: 620px) and (orientation: portrait) {
+      .bottom-area { left: 24px; width: auto; }
+      .intro { top: 90px; left: 20px; width: calc(100% - 40px); }
+      .intro .eyebrow { margin-bottom: 8px; }
+      .intro h1 { font-size: 27px; line-height: 1.25; }
+      .intro h1 br { display: none; }
+      #instruction { min-height: 0; margin-top: 8px; font-size: 12px; }
+      .gesture-note { margin-top: 8px; }
+    }
+
+    .progress-head, .progress-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .progress-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: #e5dfce;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .04em;
+    }
+
+    .progress-mark {
+      display: grid;
+      width: 21px;
+      height: 21px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .45);
+      border-radius: 50%;
+      color: var(--gold);
+      font-family: Georgia, serif;
+      font-size: 11px;
+    }
+
+    #paint-count {
+      color: #f1d5a5;
+      font-family: Georgia, serif;
+      font-size: 19px;
+    }
+
+    #paint-count small {
+      margin-left: 2px;
+      color: #b8b5a7;
+      font-family: inherit;
+      font-size: 11px;
+    }
+
+    .progress-track {
+      height: 7px;
+      margin: 12px 0 10px;
+      overflow: hidden;
+      border-radius: 8px;
+      background: rgba(231, 220, 191, .12);
+    }
+
+    #progress-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #849e6d, #d2ae6b);
+      box-shadow: 0 0 14px rgba(212, 174, 105, .35);
+      transition: width .3s ease;
+    }
+
+    .progress-label {
+      color: #aeb3a4;
+      font-size: 10px;
+      letter-spacing: .02em;
+    }
+
+    #progress-state { color: #d4bd8e; }
+
+    #complete-screen {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(10, 16, 14, .38);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .3s, visibility .3s;
+      pointer-events: none;
+    }
+
+    #complete-screen.is-visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .complete-card {
+      width: min(435px, 100%);
+      padding: 36px 34px 30px;
+      border: 1px solid rgba(226, 202, 152, .34);
+      border-radius: 20px;
+      background: rgba(26, 35, 31, .94);
+      box-shadow: 0 25px 90px rgba(0, 0, 0, .45);
+      text-align: center;
+      backdrop-filter: blur(18px);
+      transform: translateY(12px) scale(.98);
+      transition: transform .35s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    #complete-screen.is-visible .complete-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .complete-seal {
+      display: grid;
+      width: 51px;
+      height: 51px;
+      margin: 0 auto 17px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .65);
+      border-radius: 50%;
+      color: #ecd09b;
+      font-size: 22px;
+    }
+
+    .complete-kicker {
+      margin: 0 0 9px;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .2em;
+    }
+
+    .complete-card h2 {
+      margin: 0;
+      font-family: "Batang", "Nanum Myeongjo", "Malgun Gothic", serif;
+      font-size: 31px;
+      font-weight: 500;
+      letter-spacing: -.06em;
+    }
+
+    .complete-copy {
+      margin: 12px 0 25px;
+      color: #b8bbae;
+      font-size: 12px;
+      line-height: 1.8;
+      word-break: keep-all;
+    }
+
+    .complete-actions {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 9px;
+    }
+
+    .action-button {
+      min-height: 44px;
+      padding: 0 13px;
+      border: 1px solid rgba(231, 215, 180, .24);
+      border-radius: 9px;
+      background: transparent;
+      color: #ded8c8;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: -.02em;
+      cursor: pointer;
+      transition: background .2s, border-color .2s, transform .2s;
+      pointer-events: auto;
+    }
+
+    .action-button:hover {
+      border-color: rgba(231, 215, 180, .6);
+      background: rgba(255, 255, 255, .05);
+      transform: translateY(-1px);
+    }
+
+    .action-button.primary {
+      border-color: #d6ad70;
+      background: #d6ad70;
+      color: #25271f;
+    }
+
+    .action-button.primary:hover {
+      border-color: #ebc98e;
+      background: #ebc98e;
+    }
+
+    #toast {
+      position: absolute;
+      bottom: 138px;
+      left: 50%;
+      padding: 10px 15px;
+      border: 1px solid rgba(227, 206, 164, .22);
+      border-radius: 999px;
+      background: rgba(23, 31, 28, .9);
+      color: #e4d7bb;
+      font-size: 11px;
+      opacity: 0;
+      transform: translate(-50%, 8px);
+      transition: opacity .2s, transform .2s;
+      white-space: nowrap;
+    }
+
+    #toast.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    #load-error {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: none;
+      place-items: center;
+      padding: 24px;
+      background: #17211e;
+      color: #f2ead8;
+      text-align: center;
+    }
+
+    #load-error.is-visible { display: grid; }
+    #load-error p { max-width: 470px; line-height: 1.8; }
+  </style>
+</head>
+<body>
+  <div id="scene" aria-label="대나무 좌우에 먹금을 칠하는 3D 작업대"></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <div id="rotation-hint" hidden aria-hidden="true">
+    <svg viewBox="0 0 110 66">
+      <g class="hint-arrows">
+        <path class="hint-arrow" d="M 10 12 H 98"></path>
+        <path d="M 91 7 L 98 12 L 91 17"></path>
+      </g>
+      <g class="hint-hand">
+        <path d="M 45 42 V 25 A 3 3 0 0 1 51 25 V 35
+          C 52 32 56 32 57 35 C 59 32 63 33 63 36
+          C 66 34 69 36 69 40 V 46 C 69 54 64 59 56 59
+          H 52 C 47 59 45 57 43 53 L 39 46
+          C 37 42 41 40 44 43 Z"></path>
+      </g>
+    </svg>
+    <span>좌우로 밀어 돌리기</span>
+  </div>
+
+  <main id="interface">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">竹</div>
+        <div class="brand-copy">
+          <small>HANDCRAFT WORKSHOP</small>
+          <strong>대나무 공방</strong>
+        </div>
+      </div>
+      <div class="stage-chip"><b>04</b><span>4단계 · 먹금칠</span></div>
+    </header>
+
+    <section class="intro" aria-live="polite">
+      <p class="eyebrow">STAGE 04 &nbsp; / &nbsp; INK MARKING</p>
+      <h1>대나무 양쪽을<br><em>먹금칠 해주세요</em></h1>
+      <p id="instruction">먹 도구로 밝게 표시된 부분을 칠하고, 대나무를 돌려 한 바퀴를 채워주세요.</p>
+      <div class="gesture-note">
+        <span class="cut-icon" aria-hidden="true">墨</span>
+        <span>먹 도구를 드래그하고 대나무를 돌려주세요</span>
+      </div>
+    </section>
+
+    <section class="bottom-area" aria-live="polite">
+      <div class="progress-card">
+        <div class="progress-head">
+          <div class="progress-title"><span class="progress-mark" aria-hidden="true">Ⅳ</span><span>대나무 먹금칠</span></div>
+          <strong id="paint-count">0<small> / 2</small></strong>
+        </div>
+        <div class="progress-track" role="progressbar" aria-label="대나무 먹금칠 진행도" aria-valuemin="0" aria-valuemax="2" aria-valuenow="0">
+          <div id="progress-fill"></div>
+        </div>
+        <div class="progress-label">
+          <span id="progress-hint">밝은 부분을 따라 대나무 둘레를 칠해주세요</span>
+          <span id="progress-state">먹금칠 준비</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="complete-screen" aria-modal="true" role="dialog" aria-labelledby="complete-title">
+      <div class="complete-card">
+        <div class="complete-seal" aria-hidden="true">✓</div>
+        <p class="complete-kicker">STAGE 04 COMPLETE</p>
+        <h2 id="complete-title">4단계 완료</h2>
+        <p class="complete-copy">대나무 좌우에 먹금칠을 마쳤어요.<br>다음 작업을 준비해보세요.</p>
+        <div class="complete-actions">
+          <button class="action-button" id="retry-button" type="button">4단계 다시하기</button>
+          <button class="action-button primary" id="next-button" type="button">5단계로 넘어가기 <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+    </section>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <div id="load-error" role="alert">
+    <p>3D 장면을 불러오지 못했습니다.<br>인터넷 연결을 확인한 뒤 페이지를 새로고침해주세요.</p>
+  </div>
+
+  <script src="../additionalAssets/Bamboo.js"></script>
+  <script src="../additionalAssets/muk.js"></script>
+  <script type="module">
+    const errorScreen = document.getElementById("load-error");
+    import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js").then((THREE) => {
+      (() => {
+        "use strict";
+
+        const host = document.getElementById("scene");
+        const instruction = document.getElementById("instruction");
+        const paintCountLabel = document.getElementById("paint-count");
+        const progressFill = document.getElementById("progress-fill");
+        const progressTrack = document.querySelector(".progress-track");
+        const progressHint = document.getElementById("progress-hint");
+        const progressState = document.getElementById("progress-state");
+        const completionScreen = document.getElementById("complete-screen");
+        const toast = document.getElementById("toast");
+        const rotationHint = document.getElementById("rotation-hint");
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x17211e);
+        scene.fog = new THREE.Fog(0x17211e, 17, 32);
+
+        const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 80);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.08;
+        host.appendChild(renderer.domElement);
+
+        scene.add(new THREE.HemisphereLight(0xe4ddc5, 0x263732, 1.7));
+
+        const keyLight = new THREE.DirectionalLight(0xffd8a0, 3.1);
+        keyLight.position.set(-4.5, 9, 6);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.set(2048, 2048);
+        keyLight.shadow.camera.left = -9;
+        keyLight.shadow.camera.right = 9;
+        keyLight.shadow.camera.top = 9;
+        keyLight.shadow.camera.bottom = -8;
+        keyLight.shadow.bias = -0.00025;
+        scene.add(keyLight);
+
+        const fillLight = new THREE.PointLight(0x8eaa8b, 22, 17, 2);
+        fillLight.position.set(-4, 4, -2);
+        scene.add(fillLight);
+
+        const ground = new THREE.Mesh(
+          new THREE.PlaneGeometry(80, 80),
+          new THREE.MeshStandardMaterial({ color: 0x18231f, roughness: 0.96 })
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.78;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        const wall = new THREE.Mesh(
+          new THREE.BoxGeometry(15, 5, 0.24),
+          new THREE.MeshStandardMaterial({ color: 0x202c27, roughness: 0.9 })
+        );
+        wall.position.set(0, 1.72, -4.12);
+        wall.receiveShadow = true;
+        wall.castShadow = true;
+        scene.add(wall);
+
+        const slatMaterial = new THREE.MeshStandardMaterial({ color: 0x2d3931, roughness: 0.8 });
+        for (let x = -7; x <= 7; x += 0.72) {
+          const slat = new THREE.Mesh(new THREE.BoxGeometry(0.045, 3.7, 0.06), slatMaterial);
+          slat.position.set(x, 1.7, -3.96);
+          slat.castShadow = true;
+          scene.add(slat);
+        }
+
+        function addBox(parent, size, material, position) {
+          const mesh = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), material);
+          mesh.position.set(position[0], position[1], position[2]);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          parent.add(mesh);
+          return mesh;
+        }
+
+        const table = new THREE.Group();
+        scene.add(table);
+        const plankColors = [0x624a32, 0x705238, 0x664a30, 0x76583b, 0x624831];
+        for (let index = 0; index < 5; index += 1) {
+          const material = new THREE.MeshStandardMaterial({
+            color: plankColors[index],
+            roughness: 0.83,
+            metalness: 0.02
+          });
+          addBox(table, [9.7, 0.2, 0.97], material, [0, 0.46, -1.94 + index * 0.97]);
+        }
+
+        const tableEdgeMaterial = new THREE.MeshStandardMaterial({ color: 0x493723, roughness: 0.78 });
+        addBox(table, [9.84, 0.09, 0.09], tableEdgeMaterial, [0, 0.39, -2.48]);
+        addBox(table, [9.84, 0.09, 0.09], tableEdgeMaterial, [0, 0.39, 2.48]);
+
+        const legMaterial = new THREE.MeshStandardMaterial({ color: 0x493723, roughness: 0.84 });
+        for (const x of [-4.18, 4.18]) {
+          for (const z of [-2.05, 2.05]) {
+            addBox(table, [0.23, 1.15, 0.23], legMaterial, [x, -0.115, z]);
+          }
+        }
+
+        const braceMaterial = new THREE.MeshStandardMaterial({ color: 0x55402b, roughness: 0.85 });
+        addBox(table, [8.35, 0.16, 0.2], braceMaterial, [0, -0.25, -2.02]);
+        addBox(table, [8.35, 0.16, 0.2], braceMaterial, [0, -0.25, 2.02]);
+        addBox(table, [0.19, 0.15, 4.15], braceMaterial, [-3.98, -0.25, 0]);
+        addBox(table, [0.19, 0.15, 4.15], braceMaterial, [3.98, -0.25, 0]);
+
+        const TABLE_TOP = 0.56;
+        const bambooAsset = createBamboo(THREE, { cut: true });
+        const bamboo = bambooAsset.group;
+        bamboo.position.set(0, TABLE_TOP + 0.056, 1.28);
+        scene.add(bamboo);
+
+        const inkAsset = createBambooInk(THREE, bambooAsset);
+        const up = new THREE.Vector3(0, 1, 0);
+        const xAxis = new THREE.Vector3(1, 0, 0);
+        const bambooStart = bambooAsset.start;
+        const bambooEnd = bambooAsset.end;
+        const cutAxis = new THREE.Quaternion().setFromUnitVectors(up, xAxis);
+
+        const paintBandWidth = inkAsset.width;
+        const paintCenters = inkAsset.centers;
+        const paintSegmentCount = inkAsset.segmentCount;
+        const segmentAngle = inkAsset.segmentAngle;
+        const guideMaterial = new THREE.LineBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.9,
+          depthWrite: false
+        });
+        const guideBandMaterial = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.2,
+          depthWrite: false
+        });
+        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+        const guideBandGeometry = new THREE.CylinderGeometry(0.046, 0.046, paintBandWidth, 32, 1, true);
+        const guidePositions = [];
+        for (let index = 0; index < 24; index += 1) {
+          for (const fraction of [0, 0.55]) {
+            const angle = (index + fraction) * Math.PI * 2 / 24;
+            guidePositions.push(0, Math.cos(angle) * 0.046, Math.sin(angle) * 0.046);
+          }
+        }
+        const guideGeometry = new THREE.BufferGeometry();
+        guideGeometry.setAttribute("position", new THREE.Float32BufferAttribute(guidePositions, 3));
+        const paintAreas = paintCenters.map((center, index) => {
+          const guide = new THREE.Group();
+          guide.position.x = center;
+          guide.visible = index === 1;
+          const band = new THREE.Mesh(guideBandGeometry, guideBandMaterial);
+          band.quaternion.copy(cutAxis);
+          guide.add(band);
+          guide.add(new THREE.LineSegments(guideGeometry, guideMaterial));
+          bamboo.add(guide);
+          return { guide, segments: inkAsset.areas[index], painted: 0 };
+        });
+
+        const mukAsset = createMuk(THREE);
+        const muk = mukAsset.group;
+        const mukScale = 0.5;
+        muk.scale.setScalar(mukScale);
+        muk.rotation.y = Math.PI;
+        muk.visible = false;
+        scene.add(muk);
+        const mukHitTarget = new THREE.Mesh(
+          new THREE.BoxGeometry(mukAsset.length, mukAsset.thickness + 0.08, mukAsset.width + 0.08),
+          new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, colorWrite: false, depthWrite: false })
+        );
+        muk.add(mukHitTarget);
+
+        const cameraStartPosition = new THREE.Vector3(0, 6.75, 10.8);
+        const cameraStartTarget = new THREE.Vector3(0, 1.05, 0);
+        const cameraFocusPosition = new THREE.Vector3();
+        const cameraFocusTarget = new THREE.Vector3();
+        const cameraStartRotation = new THREE.Quaternion();
+        const cameraFocusRotation = new THREE.Quaternion();
+        const isMobile = (navigator.userAgentData && navigator.userAgentData.mobile)
+          || /Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(navigator.userAgent)
+          || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+        let cameraProgress = 0;
+        let cameraFocusX = paintCenters[1];
+        let transitionStartX = cameraFocusX;
+        let transitionEndX = cameraFocusX;
+        let transitionStartedAt = 0;
+        camera.position.copy(cameraStartPosition);
+        camera.lookAt(cameraStartTarget);
+        cameraStartRotation.copy(camera.quaternion);
+
+        function updateCamera() {
+          camera.position.lerpVectors(cameraStartPosition, cameraFocusPosition, cameraProgress);
+          camera.quaternion.slerpQuaternions(cameraStartRotation, cameraFocusRotation, cameraProgress);
+        }
+
+        function resize() {
+          const width = Math.max(1, host.clientWidth);
+          const height = Math.max(1, host.clientHeight);
+          camera.aspect = width / height;
+          const halfViewAngle = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+          const distance = Math.max(3.2, (bambooEnd - bambooStart) / (1.7 * halfViewAngle * camera.aspect)) / 3.75;
+          const desktopLayout = !isMobile && width >= 700;
+          document.getElementById("interface").classList.toggle("desktop-layout", desktopLayout);
+          restPointer.x = desktopLayout ? 0.39 : 0.28;
+          const horizontalOffset = desktopLayout ? 2 * distance * halfViewAngle * camera.aspect * 0.08 : 0;
+          cameraFocusTarget.set(bamboo.position.x + cameraFocusX, bamboo.position.y,
+            bamboo.position.z + horizontalOffset);
+          cameraFocusPosition.copy(cameraFocusTarget).add(new THREE.Vector3(0, distance, 0));
+          camera.position.copy(cameraFocusPosition);
+          camera.up.set(-1, 0, 0);
+          camera.lookAt(cameraFocusTarget);
+          cameraFocusRotation.copy(camera.quaternion);
+          camera.up.set(0, 1, 0);
+          updateCamera();
+          camera.updateProjectionMatrix();
+          renderer.setSize(width, height, false);
+          if (phase === "playing" && !mukMoved) placeMukAtRest();
+        }
+
+        let paintCount = 0;
+        let currentSide = 1;
+        let phase = "intro";
+        const introStartedAt = performance.now();
+        let dragMode = null;
+        let dragPointerId = null;
+        let previousPointerX = 0;
+        let mukMoved = false;
+        let hasRotated = false;
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+        const restPointer = new THREE.Vector2(0.28, -0.5);
+        const mukPlane = new THREE.Plane(
+          new THREE.Vector3(0, 1, 0),
+          -(bamboo.position.y + bambooAsset.radius + mukAsset.thickness * mukScale / 2)
+        );
+        const pointerWorld = new THREE.Vector3();
+        const dragOffset = new THREE.Vector3();
+        const previousMukPosition = new THREE.Vector3();
+        const targetMukPosition = new THREE.Vector3();
+        const mukTip = new THREE.Vector3();
+        const contact = new THREE.Vector3();
+        const hintPosition = new THREE.Vector3();
+
+        function updateProgress() {
+          const paintedSegments = paintAreas.reduce((sum, area) => sum + area.painted, 0);
+          const progress = paintedSegments / paintSegmentCount;
+          paintCountLabel.innerHTML = `${paintCount}<small> / ${paintAreas.length}</small>`;
+          progressFill.style.width = `${progress / paintAreas.length * 100}%`;
+          progressTrack.setAttribute("aria-valuenow", String(Math.round(progress * 100) / 100));
+          if (paintCount === paintAreas.length) {
+            progressHint.textContent = "좌우 먹금칠을 모두 마쳤습니다";
+            progressState.textContent = "완료";
+          } else {
+            progressHint.textContent = "먹 도구를 대고 대나무를 돌려 둘레를 채워주세요";
+            progressState.textContent = `${Math.round(paintAreas[currentSide].painted / paintSegmentCount * 100)}%`;
+          }
+        }
+
+        function updatePointer(event) {
+          const rect = renderer.domElement.getBoundingClientRect();
+          pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+          pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+          camera.updateMatrixWorld(true);
+          scene.updateMatrixWorld(true);
+          raycaster.setFromCamera(pointer, camera);
+        }
+
+        function placeMukAtRest() {
+          camera.updateMatrixWorld(true);
+          raycaster.setFromCamera(restPointer, camera);
+          if (!raycaster.ray.intersectPlane(mukPlane, pointerWorld)) return;
+          muk.position.copy(pointerWorld);
+          muk.visible = true;
+          mukMoved = false;
+        }
+
+        function updateRotationHint() {
+          rotationHint.hidden = phase !== "playing" || hasRotated;
+          if (rotationHint.hidden) return;
+          camera.updateMatrixWorld(true);
+          hintPosition.set(bamboo.position.x + paintCenters[currentSide] - 0.1,
+            bamboo.position.y + bambooAsset.radius, bamboo.position.z - bambooAsset.radius).project(camera);
+          const x = (hintPosition.x + 1) * host.clientWidth / 2 + 10;
+          const y = (1 - hintPosition.y) * host.clientHeight / 2 - 32;
+          rotationHint.style.left = `${THREE.MathUtils.clamp(x, 8, host.clientWidth - 138)}px`;
+          rotationHint.style.top = `${THREE.MathUtils.clamp(y, 8, host.clientHeight - 100)}px`;
+        }
+
+        function endDrag() {
+          const pointerId = dragPointerId;
+          dragMode = null;
+          dragPointerId = null;
+          if (pointerId !== null && renderer.domElement.hasPointerCapture(pointerId)) {
+            renderer.domElement.releasePointerCapture(pointerId);
+          }
+          renderer.domElement.style.cursor = "default";
+        }
+
+        function finishPaintArea() {
+          paintAreas[currentSide].guide.visible = false;
+          paintCount += 1;
+          endDrag();
+          muk.visible = false;
+          if (paintCount === paintAreas.length) {
+            phase = "complete";
+            instruction.textContent = "대나무 좌우에 먹금칠을 모두 마쳤습니다.";
+            completionScreen.classList.add("is-visible");
+          } else {
+            phase = "transition";
+            transitionStartX = cameraFocusX;
+            currentSide = 0;
+            transitionEndX = paintCenters[currentSide];
+            transitionStartedAt = performance.now();
+            instruction.textContent = "반대쪽으로 이동하고 있어요.";
+          }
+          updateProgress();
+        }
+
+        function paintAtMukTip() {
+          if (phase !== "playing" || !muk.visible) return;
+          muk.updateMatrixWorld(true);
+          mukTip.set(mukAsset.length / 2, 0, 0).applyMatrix4(muk.matrixWorld);
+          const deltaZ = mukTip.z - bamboo.position.z;
+          if (Math.abs(mukTip.x - (bamboo.position.x + paintCenters[currentSide])) > paintBandWidth / 2
+            || Math.abs(deltaZ) > bambooAsset.radius * 0.95) return;
+
+          contact.set(mukTip.x,
+            bamboo.position.y + Math.sqrt(bambooAsset.radius ** 2 - deltaZ ** 2),
+            mukTip.z);
+          bamboo.updateMatrixWorld(true);
+          bamboo.worldToLocal(contact);
+          const angle = (Math.atan2(-contact.y, contact.z) + Math.PI * 2) % (Math.PI * 2);
+          const center = Math.floor(angle / segmentAngle);
+          const area = paintAreas[currentSide];
+          for (let offset = -1; offset <= 1; offset += 1) {
+            const index = (center + offset + paintSegmentCount) % paintSegmentCount;
+            if (!area.segments[index].visible) {
+              area.segments[index].visible = true;
+              area.painted += 1;
+            }
+          }
+          if (area.painted === paintSegmentCount) finishPaintArea();
+          else updateProgress();
+        }
+
+        function resetStage() {
+          endDrag();
+          phase = "playing";
+          paintCount = 0;
+          currentSide = 1;
+          bamboo.rotation.x = 0;
+          hasRotated = false;
+          for (let index = 0; index < paintAreas.length; index += 1) {
+            const area = paintAreas[index];
+            area.guide.visible = index === currentSide;
+            area.painted = 0;
+            for (const segment of area.segments) segment.visible = false;
+          }
+          cameraFocusX = paintCenters[currentSide];
+          cameraFocusPosition.x = bamboo.position.x + cameraFocusX;
+          updateCamera();
+          placeMukAtRest();
+          completionScreen.classList.remove("is-visible");
+          instruction.textContent = "먹 도구로 밝게 표시된 부분을 칠하고, 대나무를 돌려 한 바퀴를 채워주세요.";
+          updateProgress();
+          toast.classList.remove("is-visible");
+        }
+
+        renderer.domElement.addEventListener("pointerdown", (event) => {
+          if (phase !== "playing" || dragMode !== null) return;
+          updatePointer(event);
+          if (raycaster.intersectObject(muk, true).length > 0) {
+            if (!raycaster.ray.intersectPlane(mukPlane, pointerWorld)) return;
+            dragMode = "muk";
+            dragOffset.copy(muk.position).sub(pointerWorld);
+            mukMoved = true;
+          } else if (raycaster.intersectObject(bambooAsset.body).length > 0) {
+            dragMode = "rotate";
+            previousPointerX = event.clientX;
+          } else {
+            return;
+          }
+          dragPointerId = event.pointerId;
+          renderer.domElement.setPointerCapture(event.pointerId);
+          renderer.domElement.style.cursor = "grabbing";
+          event.preventDefault();
+        });
+
+        renderer.domElement.addEventListener("pointermove", (event) => {
+          updatePointer(event);
+          if (event.pointerId === dragPointerId && dragMode === "muk") {
+            if (!raycaster.ray.intersectPlane(mukPlane, pointerWorld)) return;
+            previousMukPosition.copy(muk.position);
+            targetMukPosition.copy(pointerWorld).add(dragOffset);
+            const steps = Math.max(1, Math.ceil(previousMukPosition.distanceTo(targetMukPosition) / 0.008));
+            for (let step = 1; step <= steps && phase === "playing"; step += 1) {
+              muk.position.lerpVectors(previousMukPosition, targetMukPosition, step / steps);
+              paintAtMukTip();
+            }
+          } else if (event.pointerId === dragPointerId && dragMode === "rotate") {
+            const rotation = (event.clientX - previousPointerX) * 0.02;
+            previousPointerX = event.clientX;
+            if (rotation !== 0) hasRotated = true;
+            const steps = Math.max(1, Math.ceil(Math.abs(rotation) / (segmentAngle / 2)));
+            for (let step = 0; step < steps && phase === "playing"; step += 1) {
+              bamboo.rotation.x += rotation / steps;
+              paintAtMukTip();
+            }
+          } else if (phase === "playing" && dragMode === null) {
+            const overTool = raycaster.intersectObject(muk, true).length > 0;
+            const overBamboo = raycaster.intersectObject(bambooAsset.body).length > 0;
+            renderer.domElement.style.cursor = overTool || overBamboo ? "grab" : "default";
+          }
+        });
+
+        renderer.domElement.addEventListener("pointerup", (event) => {
+          if (event.pointerId === dragPointerId) endDrag();
+        });
+        renderer.domElement.addEventListener("pointercancel", (event) => {
+          if (event.pointerId === dragPointerId) endDrag();
+        });
+        renderer.domElement.addEventListener("lostpointercapture", (event) => {
+          if (event.pointerId === dragPointerId) endDrag();
+        });
+        renderer.domElement.addEventListener("pointerleave", () => {
+          if (dragMode === null) renderer.domElement.style.cursor = "default";
+        });
+
+        document.getElementById("retry-button").addEventListener("click", resetStage);
+        document.getElementById("next-button").addEventListener("click", () => {
+          window.location.href = "stage5.html";
+        });
+
+        window.addEventListener("resize", resize);
+        resize();
+        updateProgress();
+        renderer.setAnimationLoop((timestamp) => {
+          if (phase === "intro") {
+            const progress = THREE.MathUtils.clamp((timestamp - introStartedAt) / 1400, 0, 1);
+            cameraProgress = progress * progress * (3 - 2 * progress);
+            updateCamera();
+            if (progress === 1) {
+              phase = "playing";
+              placeMukAtRest();
+            }
+          } else if (phase === "transition") {
+            const progress = THREE.MathUtils.clamp((timestamp - transitionStartedAt) / 1400, 0, 1);
+            const eased = progress * progress * (3 - 2 * progress);
+            cameraFocusX = THREE.MathUtils.lerp(transitionStartX, transitionEndX, eased);
+            cameraFocusPosition.x = bamboo.position.x + cameraFocusX;
+            updateCamera();
+            if (progress === 1) {
+              phase = "playing";
+              paintAreas[currentSide].guide.visible = true;
+              placeMukAtRest();
+              instruction.textContent = "반대쪽 밝은 부분도 칠하고 대나무를 돌려 한 바퀴를 채워주세요.";
+            }
+          }
+          const pulse = reducedMotion.matches ? 0.5 : (1 - Math.cos(timestamp * Math.PI * 2 / 1650)) / 2;
+          guideBandMaterial.opacity = 0.12 + 0.16 * pulse;
+          guideMaterial.opacity = 0.58 + 0.42 * pulse;
+          updateRotationHint();
+          renderer.render(scene, camera);
+        });
+      })();
+    }).catch((error) => {
+      console.error("Three.js failed to load; the ink-marking stage could not start.", error);
+      errorScreen.classList.add("is-visible");
+    });
+  </script>
+</body>
+</html>

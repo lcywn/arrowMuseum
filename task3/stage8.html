@@ -1,0 +1,1285 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>대나무 공방 - 8단계 오늬 작업</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f2ead8;
+      --gold: #d7ad6c;
+      --panel: rgba(25, 34, 31, .84);
+      --line: rgba(232, 214, 174, .18);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #17211e;
+      color: var(--ink);
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    }
+
+    button { font: inherit; }
+
+    #scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    #scene canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: default;
+    }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(13, 20, 18, .83) 0%, rgba(13, 20, 18, .55) 29%, transparent 58%),
+        linear-gradient(0deg, rgba(11, 17, 15, .78), transparent 34%, rgba(11, 17, 15, .3));
+    }
+
+    #interface {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .topbar {
+      position: absolute;
+      top: 26px;
+      left: clamp(24px, 4.2vw, 66px);
+      right: clamp(24px, 4.2vw, 66px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 39px;
+      height: 39px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .65);
+      border-radius: 50%;
+      color: var(--gold);
+      font-family: Georgia, serif;
+      font-size: 19px;
+      line-height: 1;
+    }
+
+    .brand-copy { display: grid; gap: 3px; }
+
+    .brand-copy small {
+      color: var(--gold);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .22em;
+    }
+
+    .brand-copy strong {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: .08em;
+    }
+
+    .stage-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px 9px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(21, 29, 26, .64);
+      color: #e8dfcc;
+      font-size: 12px;
+      letter-spacing: .04em;
+      backdrop-filter: blur(12px);
+    }
+
+    .stage-chip b {
+      display: grid;
+      width: 27px;
+      height: 27px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--gold);
+      color: #20231c;
+      font-family: Georgia, serif;
+      font-size: 12px;
+    }
+
+    .intro {
+      position: absolute;
+      top: clamp(145px, 25vh, 220px);
+      left: clamp(44px, 7vw, 112px);
+      width: min(480px, 40vw);
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 19px;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .2em;
+    }
+
+    .eyebrow::before {
+      width: 24px;
+      height: 1px;
+      background: var(--gold);
+      content: "";
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Batang", "Nanum Myeongjo", "Malgun Gothic", serif;
+      font-size: clamp(34px, 3.5vw, 49px);
+      font-weight: 500;
+      letter-spacing: -.08em;
+      line-height: 1.35;
+      text-shadow: 0 3px 24px rgba(0, 0, 0, .35);
+    }
+
+    h1 em {
+      color: #d9c294;
+      font-style: normal;
+    }
+
+    #instruction {
+      min-height: 48px;
+      margin: 18px 0 0;
+      color: #c7c7b8;
+      font-size: 13px;
+      letter-spacing: -.025em;
+      line-height: 1.8;
+      word-break: keep-all;
+    }
+
+    .gesture-note {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      margin-top: 24px;
+      color: #a7ad9e;
+      font-size: 11px;
+      letter-spacing: .015em;
+    }
+
+    #action-guide {
+      opacity: 0;
+      transition: opacity .3s ease;
+    }
+
+    #action-guide:is([style*="opacity: 1"]),
+    #action-guide.is-visible {
+      opacity: 1;
+    }
+
+    @keyframes guide-pulse {
+      0%, 100% { opacity: .4; }
+      50% { opacity: 1; }
+    }
+
+    .cut-icon {
+      display: grid;
+      width: 31px;
+      height: 31px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .6);
+      border-radius: 50%;
+      color: var(--gold);
+      font-size: 14px;
+    }
+
+    .bottom-area {
+      position: absolute;
+      right: 24px;
+      bottom: 30px;
+      left: 24px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .progress-card {
+      width: min(520px, 100%);
+      padding: 17px 21px 15px;
+      border: 1px solid rgba(221, 204, 163, .22);
+      border-radius: 14px;
+      background: var(--panel);
+      box-shadow: 0 18px 55px rgba(0, 0, 0, .28);
+      backdrop-filter: blur(16px);
+    }
+
+    .progress-head, .progress-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .progress-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: #e5dfce;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .04em;
+    }
+
+    .progress-mark {
+      display: grid;
+      width: 21px;
+      height: 21px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .45);
+      border-radius: 50%;
+      color: var(--gold);
+      font-family: Georgia, serif;
+      font-size: 11px;
+    }
+
+    #progress-value {
+      color: #f1d5a5;
+      font-family: Georgia, serif;
+      font-size: 19px;
+    }
+
+    #progress-value small {
+      margin-left: 2px;
+      color: #b8b5a7;
+      font-family: inherit;
+      font-size: 11px;
+    }
+
+    .progress-track {
+      height: 7px;
+      margin: 12px 0 10px;
+      overflow: hidden;
+      border-radius: 8px;
+      background: rgba(231, 220, 191, .12);
+    }
+
+    #progress-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #849e6d, #d2ae6b);
+      box-shadow: 0 0 14px rgba(212, 174, 105, .35);
+      transition: width .3s ease;
+    }
+
+    .progress-label {
+      color: #aeb3a4;
+      font-size: 10px;
+      letter-spacing: .02em;
+    }
+
+    #progress-state { color: #d4bd8e; }
+
+    #complete-screen {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(10, 16, 14, .38);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .3s, visibility .3s;
+      pointer-events: none;
+    }
+
+    #complete-screen.is-visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .complete-card {
+      width: min(435px, 100%);
+      padding: 36px 34px 30px;
+      border: 1px solid rgba(226, 202, 152, .34);
+      border-radius: 20px;
+      background: rgba(26, 35, 31, .94);
+      box-shadow: 0 25px 90px rgba(0, 0, 0, .45);
+      text-align: center;
+      backdrop-filter: blur(18px);
+      transform: translateY(12px) scale(.98);
+      transition: transform .35s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    #complete-screen.is-visible .complete-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .complete-seal {
+      display: grid;
+      width: 51px;
+      height: 51px;
+      margin: 0 auto 17px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .65);
+      border-radius: 50%;
+      color: #ecd09b;
+      font-size: 22px;
+    }
+
+    .complete-kicker {
+      margin: 0 0 9px;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .2em;
+    }
+
+    .complete-card h2 {
+      margin: 0;
+      font-family: "Batang", "Nanum Myeongjo", "Malgun Gothic", serif;
+      font-size: 31px;
+      font-weight: 500;
+      letter-spacing: -.06em;
+    }
+
+    .complete-copy {
+      margin: 12px 0 25px;
+      color: #b8bbae;
+      font-size: 12px;
+      line-height: 1.8;
+      word-break: keep-all;
+    }
+
+    .complete-actions {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 9px;
+    }
+
+    .action-button {
+      min-height: 44px;
+      padding: 0 13px;
+      border: 1px solid rgba(231, 215, 180, .24);
+      border-radius: 9px;
+      background: transparent;
+      color: #ded8c8;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: -.02em;
+      cursor: pointer;
+      transition: background .2s, border-color .2s, transform .2s;
+      pointer-events: auto;
+    }
+
+    .action-button:hover {
+      border-color: rgba(231, 215, 180, .6);
+      background: rgba(255, 255, 255, .05);
+      transform: translateY(-1px);
+    }
+
+    .action-button.primary {
+      border-color: #d6ad70;
+      background: #d6ad70;
+      color: #25271f;
+    }
+
+    .action-button.primary:hover {
+      border-color: #ebc98e;
+      background: #ebc98e;
+    }
+
+    #toast {
+      position: absolute;
+      bottom: 138px;
+      left: 50%;
+      padding: 10px 15px;
+      border: 1px solid rgba(227, 206, 164, .22);
+      border-radius: 999px;
+      background: rgba(23, 31, 28, .9);
+      color: #e4d7bb;
+      font-size: 11px;
+      opacity: 0;
+      transform: translate(-50%, 8px);
+      transition: opacity .2s, transform .2s;
+      white-space: nowrap;
+    }
+
+    #toast.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    #load-error {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: none;
+      place-items: center;
+      padding: 24px;
+      background: #17211e;
+      color: #f2ead8;
+      text-align: center;
+    }
+
+    #load-error.is-visible { display: grid; }
+    #load-error p { max-width: 470px; line-height: 1.8; }
+  </style>
+</head>
+<body>
+  <div id="scene" aria-label="송곳으로 화살대에 구멍을 내고 오늬를 붙이는 3D 작업대"></div>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <svg id="action-guide" viewBox="0 0 160 160" aria-hidden="true" style="position: absolute; top: 50%; left: 50%; width: 160px; height: 160px; transform: translate(-50%, -50%); opacity: 0; transition: opacity .3s ease; z-index: 10; pointer-events: none;">
+    <defs>
+      <marker id="guide-arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L0,6 L9,3 Z" fill="white" opacity="0.8"/>
+      </marker>
+    </defs>
+    <path id="action-guide-arrow" d="M 40 80 L 50 80 M 110 80 L 100 80 M 50 60 L 50 100 M 100 60 L 100 100" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-dasharray="8" filter="drop-shadow(0 0 6px rgba(255, 255, 255, .6))" style="animation: guide-pulse 1.6s ease-in-out infinite;"/>
+    <text x="80" y="135" text-anchor="middle" fill="white" font-size="12" opacity="0.7">←→ 흔들기</text>
+  </svg>
+
+  <svg id="positioning-guide" viewBox="0 0 320 240" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .4s ease; z-index: 9; pointer-events: none;">
+    <defs>
+      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+    <!-- Target highlight circle -->
+    <circle id="positioning-target" cx="160" cy="120" r="45" fill="none" stroke="white" stroke-width="2.5" stroke-dasharray="6 4" opacity="0.7" filter="url(#glow)" style="animation: guide-pulse 1.6s ease-in-out infinite;"/>
+    <!-- Arrow pointing to target -->
+    <path id="positioning-arrow" d="M 80 80 Q 110 100 145 115" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="8" opacity="0.8" filter="url(#glow)" style="animation: guide-pulse 1.6s ease-in-out infinite;"/>
+    <polygon id="positioning-arrowhead" points="150,120 142,115 148,108" fill="white" opacity="0.8" filter="url(#glow)"/>
+    <!-- Instruction text -->
+    <text x="80" y="40" font-size="14" fill="white" opacity="0.8" filter="url(#glow)" font-weight="500">화살대를 여기에 놓으세요</text>
+  </svg>
+
+  <svg id="drilling-guide" viewBox="0 0 320 240" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .4s ease; z-index: 9; pointer-events: none;">
+    <defs>
+      <filter id="drill-glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+    <!-- Left-right shake arrows -->
+    <g>
+      <!-- Left arrow -->
+      <path d="M 60 120 L 100 120" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.8" filter="url(#drill-glow)"/>
+      <polygon points="50,120 60,115 60,125" fill="white" opacity="0.8" filter="url(#drill-glow)"/>
+      <!-- Right arrow -->
+      <path d="M 260 120 L 220 120" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.8" filter="url(#drill-glow)"/>
+      <polygon points="270,120 260,115 260,125" fill="white" opacity="0.8" filter="url(#drill-glow)"/>
+      <!-- Instruction text -->
+      <text x="160" y="50" font-size="16" fill="white" opacity="0.8" filter="url(#drill-glow)" font-weight="600" text-anchor="middle">좌우로 흔들어 송곳을 밀어넣으세요</text>
+    </g>
+  </svg>
+
+  <main id="interface">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">竹</div>
+        <div class="brand-copy">
+          <small>HANDCRAFT WORKSHOP</small>
+          <strong>대나무 공방</strong>
+        </div>
+      </div>
+      <div class="stage-chip"><b>08</b><span>8단계 · 오늬 작업</span></div>
+    </header>
+
+    <section class="intro" aria-live="polite">
+      <p class="eyebrow">STAGE 08 &nbsp; / &nbsp; ARROW NOCK</p>
+      <h1>화살대 끝에<br><em>오늬를 만들고 붙여주세요</em></h1>
+      <p id="instruction">화살대를 송곳 위에 놓고 좌우로 흔들어 구멍을 내세요.</p>
+      <div class="gesture-note">
+        <span class="cut-icon" aria-hidden="true">↔</span>
+        <span>송곳 위에서 화살대를 좌우로 흔들어주세요</span>
+      </div>
+    </section>
+
+    <section class="bottom-area" aria-live="polite">
+      <div class="progress-card">
+        <div class="progress-head">
+          <div class="progress-title"><span class="progress-mark" aria-hidden="true">Ⅷ</span><span>오늬 구멍 내기</span></div>
+          <strong id="progress-value">0%</strong>
+        </div>
+        <div class="progress-track" role="progressbar" aria-label="오늬 구멍 내기 진행도" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div id="progress-fill"></div>
+        </div>
+        <div class="progress-label">
+          <span id="progress-hint">화살대를 송곳 위로 드래그해주세요</span>
+          <span id="progress-state">정렬 준비</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="complete-screen" aria-modal="true" role="dialog" aria-labelledby="complete-title">
+      <div class="complete-card">
+        <div class="complete-seal" aria-hidden="true">✓</div>
+        <p class="complete-kicker">STAGE 08 COMPLETE</p>
+        <h2 id="complete-title">8단계 완료</h2>
+        <p class="complete-copy">화살대에 오늬를 단단히 붙였어요.<br>다음 작업을 준비해보세요.</p>
+        <div class="complete-actions">
+          <button class="action-button" id="retry-button" type="button">8단계 다시하기</button>
+          <button class="action-button primary" id="next-button" type="button">9단계로 넘어가기 <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+    </section>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <div id="load-error" role="alert">
+    <p>3D 장면을 불러오지 못했습니다.<br>인터넷 연결을 확인한 뒤 페이지를 새로고침해주세요.</p>
+  </div>
+
+  <script src="../additionalAssets/Bamboo.js"></script>
+  <script src="stage7Bamboo.js"></script>
+  <script>
+    const errorScreen = document.getElementById("load-error");
+    import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js").then((THREE) => {
+      (() => {
+        "use strict";
+
+        const host = document.getElementById("scene");
+        const instruction = document.getElementById("instruction");
+        const progressValue = document.getElementById("progress-value");
+        const progressFill = document.getElementById("progress-fill");
+        const progressTrack = document.querySelector(".progress-track");
+        const progressHint = document.getElementById("progress-hint");
+        const progressState = document.getElementById("progress-state");
+        const completionScreen = document.getElementById("complete-screen");
+        const toast = document.getElementById("toast");
+        const actionGuide = document.getElementById("action-guide");
+        const positioningGuide = document.getElementById("positioning-guide");
+        const drillingGuide = document.getElementById("drilling-guide");
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x17211e);
+        scene.fog = new THREE.Fog(0x17211e, 17, 32);
+
+        const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 80);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.08;
+        host.appendChild(renderer.domElement);
+
+        scene.add(new THREE.HemisphereLight(0xe4ddc5, 0x263732, 1.7));
+
+        const keyLight = new THREE.DirectionalLight(0xffd8a0, 3.1);
+        keyLight.position.set(-4.5, 9, 6);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.set(2048, 2048);
+        keyLight.shadow.camera.left = -9;
+        keyLight.shadow.camera.right = 9;
+        keyLight.shadow.camera.top = 9;
+        keyLight.shadow.camera.bottom = -8;
+        keyLight.shadow.bias = -0.00025;
+        scene.add(keyLight);
+
+        const fillLight = new THREE.PointLight(0x8eaa8b, 22, 17, 2);
+        fillLight.position.set(-4, 4, -2);
+        scene.add(fillLight);
+
+        const ground = new THREE.Mesh(
+          new THREE.PlaneGeometry(80, 80),
+          new THREE.MeshStandardMaterial({ color: 0x18231f, roughness: 0.96 })
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.78;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        const wall = new THREE.Mesh(
+          new THREE.BoxGeometry(15, 5, 0.24),
+          new THREE.MeshStandardMaterial({ color: 0x202c27, roughness: 0.9 })
+        );
+        wall.position.set(0, 1.72, -4.12);
+        wall.receiveShadow = true;
+        wall.castShadow = true;
+        scene.add(wall);
+
+        const slatMaterial = new THREE.MeshStandardMaterial({ color: 0x2d3931, roughness: 0.8 });
+        for (let x = -7; x <= 7; x += 0.72) {
+          const slat = new THREE.Mesh(new THREE.BoxGeometry(0.045, 3.7, 0.06), slatMaterial);
+          slat.position.set(x, 1.7, -3.96);
+          slat.castShadow = true;
+          scene.add(slat);
+        }
+
+        function addBox(parent, size, material, position) {
+          const mesh = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), material);
+          mesh.position.set(position[0], position[1], position[2]);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          parent.add(mesh);
+          return mesh;
+        }
+
+        const table = new THREE.Group();
+        scene.add(table);
+        const plankColors = [0x624a32, 0x705238, 0x664a30, 0x76583b, 0x624831];
+        for (let index = 0; index < 5; index += 1) {
+          const material = new THREE.MeshStandardMaterial({
+            color: plankColors[index],
+            roughness: 0.83,
+            metalness: 0.02
+          });
+          addBox(table, [9.7, 0.2, 0.97], material, [0, 0.46, -1.94 + index * 0.97]);
+        }
+
+        const tableEdgeMaterial = new THREE.MeshStandardMaterial({ color: 0x493723, roughness: 0.78 });
+        addBox(table, [9.84, 0.09, 0.09], tableEdgeMaterial, [0, 0.39, -2.48]);
+        addBox(table, [9.84, 0.09, 0.09], tableEdgeMaterial, [0, 0.39, 2.48]);
+
+        const legMaterial = new THREE.MeshStandardMaterial({ color: 0x493723, roughness: 0.84 });
+        for (const x of [-4.18, 4.18]) {
+          for (const z of [-2.05, 2.05]) {
+            addBox(table, [0.23, 1.15, 0.23], legMaterial, [x, -0.115, z]);
+          }
+        }
+
+        const braceMaterial = new THREE.MeshStandardMaterial({ color: 0x55402b, roughness: 0.85 });
+        addBox(table, [8.35, 0.16, 0.2], braceMaterial, [0, -0.25, -2.02]);
+        addBox(table, [8.35, 0.16, 0.2], braceMaterial, [0, -0.25, 2.02]);
+        addBox(table, [0.19, 0.15, 4.15], braceMaterial, [-3.98, -0.25, 0]);
+        addBox(table, [0.19, 0.15, 4.15], braceMaterial, [3.98, -0.25, 0]);
+
+        const TABLE_TOP = 0.56;
+        const bambooLength = 3.5;
+        const cutLength = bambooLength / 12;
+        const up = new THREE.Vector3(0, 1, 0);
+        const xAxis = new THREE.Vector3(1, 0, 0);
+        const bodyAxis = new THREE.Quaternion().setFromUnitVectors(up, xAxis);
+
+        // Load stage 7 final bamboo asset from previous stage
+        let stage7BambooResult = null;
+        if (typeof window.stage7BambooResult !== 'undefined' && window.stage7BambooResult.group) {
+          // Use stored result from stage7
+          stage7BambooResult = window.stage7BambooResult;
+        } else {
+          // Create stage7 bamboo (wrapping complete state)
+          stage7BambooResult = createStage7Bamboo(THREE);
+        }
+        
+        const bamboo = stage7BambooResult.group;
+        const bambooAsset = stage7BambooResult.asset;
+        const inkAsset = stage7BambooResult.ink;
+        const glueAsset = stage7BambooResult.glue;
+
+        bamboo.position.set(0, TABLE_TOP + 0.0575, 1.28);
+        scene.add(bamboo);
+
+        // Extract parameters from the asset for compatibility
+        const bambooStart = bambooAsset.start;
+        const bambooEnd = bambooAsset.end;
+        const inkCenters = [bambooStart + 0.24, bambooEnd - 0.24];
+        const inkBandWidth = inkAsset.width;
+
+        const threadMaterial = new THREE.MeshStandardMaterial({
+          color: 0xf3efe4,
+          roughness: 0.68,
+          metalness: 0.02
+        });
+        const hitTargetMaterial = new THREE.MeshBasicMaterial({
+          transparent: true,
+          opacity: 0,
+          colorWrite: false,
+          depthWrite: false
+        });
+        const wrapTargets = [];
+        const wrapGroups = [];
+        const looseThreads = [];
+        const threadOrigins = [];
+
+        const coatingBounds = [
+          [bambooStart, inkCenters[0] - inkBandWidth / 2],
+          [inkCenters[1] + inkBandWidth / 2, bambooEnd]
+        ];
+
+        for (let index = 0; index < inkCenters.length; index += 1) {
+          const hitTarget = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.22, 0.22, 0.36, 12),
+            hitTargetMaterial
+          );
+          hitTarget.position.x = inkCenters[index];
+          hitTarget.quaternion.copy(bodyAxis);
+          hitTarget.userData.wrapIndex = index;
+          bamboo.add(hitTarget);
+          wrapTargets.push(hitTarget);
+
+          const [start, end] = coatingBounds[index];
+          const wrapCenter = (start + end) / 2;
+          const wrapStart = index === 0 ? start : end;
+          const wrapEnd = index === 0 ? end : start;
+          const helixPoints = [];
+          const pointCount = 128;
+          const loopCount = 4;
+          for (let pointIndex = 0; pointIndex <= pointCount; pointIndex += 1) {
+            const amount = pointIndex / pointCount;
+            const angle = amount * loopCount * Math.PI * 2;
+            const x = wrapStart + (wrapEnd - wrapStart) * amount - wrapCenter;
+            helixPoints.push(new THREE.Vector3(
+              x,
+              Math.sin(angle) * 0.0515,
+              Math.cos(angle) * 0.0515
+            ));
+          }
+          const wrapGroup = new THREE.Group();
+          wrapGroup.position.x = wrapCenter;
+          wrapGroup.visible = true;
+          const wrappedWire = new THREE.Mesh(
+            new THREE.TubeGeometry(new THREE.CatmullRomCurve3(helixPoints), 128, 0.006, 8, false),
+            threadMaterial
+          );
+          wrappedWire.castShadow = true;
+          wrappedWire.receiveShadow = true;
+          wrapGroup.add(wrappedWire);
+          bamboo.add(wrapGroup);
+          wrapGroups.push(wrapGroup);
+
+          const originX = index === 0 ? -2.05 : 2.05;
+          const threadGroup = new THREE.Group();
+          threadGroup.position.set(originX, TABLE_TOP + 0.2, bamboo.position.z);
+          threadGroup.userData.wrapIndex = index;
+          scene.add(threadGroup);
+          const looseCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(0, 0.42, 0),
+            new THREE.Vector3(0.025, 0.24, 0.035),
+            new THREE.Vector3(-0.02, 0.04, -0.02),
+            new THREE.Vector3(0.015, -0.16, 0.01)
+          ]);
+          const looseWire = new THREE.Mesh(
+            new THREE.TubeGeometry(looseCurve, 48, 0.007, 8, false),
+            threadMaterial
+          );
+          looseWire.userData.wrapIndex = index;
+          looseWire.castShadow = true;
+          threadGroup.add(looseWire);
+          const threadHitTarget = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.11, 0.11, 0.68, 10),
+            hitTargetMaterial
+          );
+          threadHitTarget.userData.wrapIndex = index;
+          threadGroup.add(threadHitTarget);
+          looseThreads.push(threadGroup);
+          threadOrigins.push(threadGroup.position.clone());
+        }
+
+        const shaftLength = bambooEnd - bambooStart;
+        const shaftOrigin = new THREE.Vector3(2.15, TABLE_TOP + 0.0575, 1.28);
+        bamboo.position.copy(shaftOrigin);
+        for (const thread of looseThreads) thread.visible = false;
+
+        const jig = new THREE.Group();
+        jig.position.z = bamboo.position.z;
+        scene.add(jig);
+        const jigWoodMaterial = new THREE.MeshStandardMaterial({
+          color: 0x9b7549,
+          roughness: 0.82,
+          metalness: 0
+        });
+        const jigBar = new THREE.Mesh(
+          new THREE.BoxGeometry(1.35, 0.12, 0.34),
+          jigWoodMaterial
+        );
+        jigBar.position.set(0, TABLE_TOP + 0.06, 0);
+        jigBar.castShadow = true;
+        jigBar.receiveShadow = true;
+        jig.add(jigBar);
+        const jigDisk = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.18, 0.18, 0.06, 24),
+          jigWoodMaterial
+        );
+        jigDisk.position.set(0, TABLE_TOP + 0.025, 0);
+        jigDisk.castShadow = true;
+        jig.add(jigDisk);
+
+        const awlHeight = 0.52;
+        const jigTop = TABLE_TOP + 0.12;
+        const awl = new THREE.Mesh(
+          new THREE.ConeGeometry(0.045, awlHeight, 16),
+          new THREE.MeshStandardMaterial({ color: 0xb9c0bb, roughness: 0.28, metalness: 0.72 })
+        );
+        awl.position.set(0, jigTop + awlHeight / 2, 0);
+        awl.castShadow = true;
+        jig.add(awl);
+
+        const jigTarget = new THREE.Mesh(
+          new THREE.SphereGeometry(0.2, 12, 8),
+          hitTargetMaterial
+        );
+        jigTarget.position.set(0, jigTop + awlHeight, 0);
+        jig.add(jigTarget);
+        const jigRestPosition = jig.position.clone();
+        const jigSidePosition = new THREE.Vector3(3.35, 0, -0.75);
+
+        const holeCover = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.0425, 0.0425, 0.014, 24),
+          new THREE.MeshStandardMaterial({ color: 0xc49b61, roughness: 0.8 })
+        );
+        holeCover.position.x = bambooEnd;
+        holeCover.quaternion.copy(bodyAxis);
+        bamboo.add(holeCover);
+        const hole = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.0275, 0.0275, 0.016, 24),
+          new THREE.MeshStandardMaterial({ color: 0x34251a, roughness: 0.95 })
+        );
+        hole.position.x = bambooEnd;
+        hole.quaternion.copy(bodyAxis);
+        hole.visible = false;
+        bamboo.add(hole);
+        const holeTarget = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.18, 0.18, 0.36, 12),
+          hitTargetMaterial
+        );
+        holeTarget.position.x = bambooEnd;
+        holeTarget.quaternion.copy(bodyAxis);
+        bamboo.add(holeTarget);
+
+        const nockLength = shaftLength / 10;
+        const nockMaterial = new THREE.MeshStandardMaterial({
+          color: 0xd8c18d,
+          roughness: 0.76,
+          metalness: 0
+        });
+        const glueMaterial = new THREE.MeshStandardMaterial({
+          color: 0x89502d,
+          roughness: 0.72,
+          metalness: 0
+        });
+        const nockGroup = new THREE.Group();
+        const nockOrigin = new THREE.Vector3(2.15, TABLE_TOP + 0.0575, 1.28);
+        nockGroup.position.copy(nockOrigin);
+        nockGroup.quaternion.copy(bodyAxis);
+        nockGroup.visible = false;
+        scene.add(nockGroup);
+        const nockBody = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.044, 0.044, nockLength, 24, 1),
+          nockMaterial
+        );
+        nockBody.castShadow = true;
+        nockBody.receiveShadow = true;
+        nockGroup.add(nockBody);
+        const nockGlue = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.045, 0.045, nockLength / 2, 24, 1),
+          glueMaterial
+        );
+        nockGlue.position.y = -nockLength / 4;
+        nockGlue.visible = false;
+        nockGlue.castShadow = true;
+        nockGlue.receiveShadow = true;
+        nockGroup.add(nockGlue);
+        const nockHitTarget = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.14, 0.14, nockLength + 0.12, 12),
+          hitTargetMaterial
+        );
+        nockHitTarget.userData.isNockTarget = true;
+        nockGroup.add(nockHitTarget);
+
+        const bowl = new THREE.Group();
+        bowl.position.set(-2.2, TABLE_TOP, 1.28);
+        bowl.visible = false;
+        scene.add(bowl);
+        const bowlMaterial = new THREE.MeshStandardMaterial({
+          color: 0xe7e2d5,
+          roughness: 0.32,
+          metalness: 0.02
+        });
+        const bowlProfile = [
+          new THREE.Vector2(0, 0),
+          new THREE.Vector2(0.17, 0),
+          new THREE.Vector2(0.24, 0.04),
+          new THREE.Vector2(0.33, 0.2),
+          new THREE.Vector2(0.33, 0.24),
+          new THREE.Vector2(0.29, 0.24),
+          new THREE.Vector2(0.27, 0.2),
+          new THREE.Vector2(0.2, 0.07),
+          new THREE.Vector2(0, 0.07)
+        ];
+        const bowlBody = new THREE.Mesh(new THREE.LatheGeometry(bowlProfile, 32), bowlMaterial);
+        bowlBody.castShadow = true;
+        bowlBody.receiveShadow = true;
+        bowl.add(bowlBody);
+        const glueLiquid = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.265, 0.265, 0.012, 32),
+          glueMaterial
+        );
+        glueLiquid.position.y = 0.17;
+        bowl.add(glueLiquid);
+        const bowlRim = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.025, 8, 32), bowlMaterial);
+        bowlRim.rotation.x = Math.PI / 2;
+        bowlRim.position.y = 0.225;
+        bowlRim.castShadow = true;
+        bowl.add(bowlRim);
+
+        function resize() {
+          const width = Math.max(1, host.clientWidth);
+          const height = Math.max(1, host.clientHeight);
+          camera.aspect = width / height;
+          camera.position.set(0, 6.75, 10.8);
+          camera.lookAt(0, 1.05, 0);
+          camera.updateProjectionMatrix();
+          renderer.setSize(width, height, false);
+        }
+
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+        const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(TABLE_TOP + 0.0575));
+        const dragPoint = new THREE.Vector3();
+        const dragOffset = new THREE.Vector3();
+        const horizontalQuaternion = new THREE.Quaternion();
+        const verticalQuaternion = new THREE.Quaternion().setFromAxisAngle(
+          new THREE.Vector3(0, 0, 1),
+          -Math.PI / 2
+        );
+        const drillTravel = awlHeight + 0.06;
+        const drillStartY = jigTop + drillTravel + shaftLength / 2;
+        const alignedPosition = new THREE.Vector3(0, TABLE_TOP + 0.0575, bamboo.position.z);
+        const alignmentStartPosition = new THREE.Vector3();
+        const alignmentStartQuaternion = new THREE.Quaternion();
+        const alignmentStartJigPosition = new THREE.Vector3();
+        const clock = new THREE.Clock();
+        let phase = "positionShaft";
+        let drillProgress = 0;
+        let shakeReversals = 0;
+        let lastShakeDirection = 0;
+        let drillPointerOrigin = 0;
+        let draggedKind = null;
+        let alignElapsed = 0;
+        let nockDipped = false;
+        let toastTimer = 0;
+
+        function showGuidance(show, type = "positioning") {
+          if (type === "positioning") {
+            if (show) {
+              positioningGuide.style.opacity = "1";
+            } else {
+              positioningGuide.style.opacity = "0";
+            }
+          } else if (type === "drilling") {
+            if (show) {
+              drillingGuide.style.opacity = "1";
+            } else {
+              drillingGuide.style.opacity = "0";
+            }
+          }
+        }
+
+        function updateProgress() {
+          const percent = Math.round(drillProgress * 100);
+          progressValue.textContent = `${percent}%`;
+          progressFill.style.width = `${percent}%`;
+          progressTrack.setAttribute("aria-valuenow", String(percent));
+          if (phase === "positionShaft") {
+            progressHint.textContent = "화살대를 송곳 위로 드래그해주세요";
+            progressState.textContent = "정렬 준비";
+            showGuidance(true, "positioning");
+          } else if (phase === "drilling") {
+            progressHint.textContent = "화살대를 잡고 좌우로 흔들어 구멍을 내세요";
+            progressState.textContent = "구멍 내기 중";
+            showGuidance(true, "drilling");
+            showGuidance(false, "positioning");
+          } else if (phase === "aligning") {
+            progressHint.textContent = "오늬 구멍이 완성됐어요. 화살대를 정렬합니다";
+            progressState.textContent = "정렬 중";
+            showGuidance(false, "positioning");
+            showGuidance(false, "drilling");
+          } else if (phase === "dipNock") {
+            progressHint.textContent = "밝은 오늬를 민어부레풀 그릇에 담갔다 꺼내세요";
+            progressState.textContent = "오늬 풀칠";
+            showGuidance(false, "positioning");
+            showGuidance(false, "drilling");
+          } else if (phase === "attachNock") {
+            progressHint.textContent = "갈색으로 풀칠된 오늬를 화살대 끝에 드래그하세요";
+            progressState.textContent = "오늬 부착";
+            showGuidance(false, "positioning");
+            showGuidance(false, "drilling");
+          } else {
+            progressHint.textContent = "오늬를 단단히 붙였습니다";
+            progressState.textContent = "완료";
+            showGuidance(false, "positioning");
+            showGuidance(false, "drilling");
+          }
+        }
+
+        function updatePointer(event) {
+          const rect = renderer.domElement.getBoundingClientRect();
+          pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+          pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+          camera.updateMatrixWorld(true);
+          scene.updateMatrixWorld(true);
+          raycaster.setFromCamera(pointer, camera);
+        }
+
+        function hitsShaft() {
+          return raycaster.intersectObjects([bamboo], true).length > 0;
+        }
+
+        function hitsNock() {
+          return raycaster.intersectObjects([nockGroup], true).length > 0;
+        }
+
+        function isPositionedCorrectly() {
+          // 위치 판정을 대폭 완화: 송곳 주변 큰 범위에서 판정
+          const tolerance = 0.3; // 허용 범위를 넓힘
+          const distX = Math.abs(bamboo.position.x - shaftOrigin.x);
+          const distZ = Math.abs(bamboo.position.z - shaftOrigin.z);
+          return distX < tolerance && distZ < tolerance;
+        }
+
+        function showToast(message) {
+          toast.textContent = message;
+          toast.classList.add("is-visible");
+          window.clearTimeout(toastTimer);
+          toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 2400);
+        }
+
+        function beginAlignment() {
+          if (phase !== "drilling") return;
+          phase = "aligning";
+          draggedKind = null;
+          holeCover.visible = false;
+          hole.visible = true;
+          bambooAsset.ends[1].visible = false;
+          alignmentStartPosition.copy(bamboo.position);
+          alignmentStartQuaternion.copy(bamboo.quaternion);
+          alignmentStartJigPosition.copy(jig.position);
+          alignElapsed = 0;
+          instruction.textContent = "송곳 작업이 끝났어요. 화살대를 가운데에 눕힙니다.";
+          updateProgress();
+        }
+
+        function finishNockDip() {
+          nockGlue.visible = true;
+          nockDipped = true;
+          nockGroup.position.copy(nockOrigin);
+          phase = "attachNock";
+          instruction.textContent = "풀칠된 오늬를 원래 자리에서 화살대 끝으로 드래그하세요.";
+          updateProgress();
+        }
+
+        function attachNock() {
+          const overlap = 0.08;
+          nockGroup.position.set(
+            bamboo.position.x + bambooEnd + nockLength / 2 - overlap,
+            bamboo.position.y,
+            bamboo.position.z
+          );
+          hole.visible = false;
+          phase = "complete";
+          instruction.textContent = "오늬가 화살대 끝에 단단히 붙었습니다.";
+          updateProgress();
+          completionScreen.classList.add("is-visible");
+        }
+
+        function resetStage() {
+          phase = "positionShaft";
+          drillProgress = 0;
+          shakeReversals = 0;
+          lastShakeDirection = 0;
+          draggedKind = null;
+          alignElapsed = 0;
+          nockDipped = false;
+          bamboo.position.copy(shaftOrigin);
+          bamboo.quaternion.identity();
+          jig.visible = true;
+          jig.position.copy(jigRestPosition);
+          awl.visible = true;
+          jigBar.visible = true;
+          jigDisk.visible = true;
+          holeCover.visible = true;
+          hole.visible = false;
+          for (const roundedEnd of bambooAsset.ends) roundedEnd.visible = true;
+          nockGroup.visible = false;
+          nockGroup.position.copy(nockOrigin);
+          nockGlue.visible = false;
+          bowl.visible = false;
+          completionScreen.classList.remove("is-visible");
+          instruction.textContent = "화살대를 송곳 위에 놓고 좌우로 흔들어 구멍을 내세요.";
+          updateProgress();
+          renderer.domElement.style.cursor = "default";
+          toast.classList.remove("is-visible");
+        }
+
+        renderer.domElement.addEventListener("pointermove", (event) => {
+          updatePointer(event);
+          if (draggedKind === "shaftPosition" || draggedKind === "nockDip" || draggedKind === "nockAttach") {
+            if (!raycaster.ray.intersectPlane(dragPlane, dragPoint)) return;
+            if (draggedKind === "shaftPosition") {
+              bamboo.position.x = dragPoint.x + dragOffset.x;
+              bamboo.position.z = dragPoint.z + dragOffset.z;
+            } else {
+              nockGroup.position.x = dragPoint.x + dragOffset.x;
+              nockGroup.position.z = dragPoint.z + dragOffset.z;
+            }
+            return;
+          }
+          if (draggedKind === "drilling") {
+            const directionDelta = event.clientX - drillPointerOrigin;
+            bamboo.position.x = Math.max(-0.1, Math.min(0.1, directionDelta * 0.001));
+            const deltaX = event.clientX - lastPointerX;
+            if (Math.abs(deltaX) >= 4) {
+              const direction = Math.sign(deltaX);
+              if (lastShakeDirection !== 0 && direction !== lastShakeDirection) {
+                shakeReversals += 1;
+                drillProgress = Math.min(shakeReversals / 10, 1);
+                bamboo.position.y = drillStartY - drillTravel * drillProgress;
+                updateProgress();
+                if (drillProgress >= 1) beginAlignment();
+              }
+              lastShakeDirection = direction;
+              lastPointerX = event.clientX;
+            }
+            return;
+          }
+          if (phase === "positionShaft" && hitsShaft()) {
+            renderer.domElement.style.cursor = "grab";
+          } else if ((phase === "dipNock" || phase === "attachNock") && hitsNock()) {
+            renderer.domElement.style.cursor = "grab";
+          } else {
+            renderer.domElement.style.cursor = "default";
+          }
+        });
+
+        let lastPointerX = 0;
+        renderer.domElement.addEventListener("pointerdown", (event) => {
+          if (event.button !== 0) return;
+          updatePointer(event);
+          if (phase === "positionShaft" && hitsShaft()) {
+            if (!raycaster.ray.intersectPlane(dragPlane, dragPoint)) return;
+            draggedKind = "shaftPosition";
+            dragOffset.set(bamboo.position.x - dragPoint.x, 0, bamboo.position.z - dragPoint.z);
+          } else if (phase === "drilling" && hitsShaft()) {
+            draggedKind = "drilling";
+            lastPointerX = event.clientX;
+            drillPointerOrigin = event.clientX;
+            lastShakeDirection = 0;
+          } else if ((phase === "dipNock" || phase === "attachNock") && hitsNock()) {
+            if (!raycaster.ray.intersectPlane(dragPlane, dragPoint)) return;
+            draggedKind = phase === "dipNock" ? "nockDip" : "nockAttach";
+            dragOffset.set(nockGroup.position.x - dragPoint.x, 0, nockGroup.position.z - dragPoint.z);
+          } else {
+            return;
+          }
+          renderer.domElement.setPointerCapture(event.pointerId);
+          renderer.domElement.style.cursor = "grabbing";
+          event.preventDefault();
+        });
+
+        renderer.domElement.addEventListener("pointerup", (event) => {
+          if (draggedKind === null) return;
+          updatePointer(event);
+          const kind = draggedKind;
+          draggedKind = null;
+          if (renderer.domElement.hasPointerCapture(event.pointerId)) {
+            renderer.domElement.releasePointerCapture(event.pointerId);
+          }
+          renderer.domElement.style.cursor = "default";
+
+          if (kind === "shaftPosition") {
+            // 위치 판정을 완화: isPositionedCorrectly 함수 사용
+            if (isPositionedCorrectly()) {
+              bamboo.position.set(0, drillStartY, jig.position.z);
+              bamboo.quaternion.copy(verticalQuaternion);
+              phase = "drilling";
+              drillProgress = 0;
+              shakeReversals = 0;
+              instruction.textContent = "화살대를 잡고 좌우로 흔들어 송곳을 밀어 넣으세요.";
+              updateProgress();
+            } else {
+              bamboo.position.copy(shaftOrigin);
+            }
+          } else if (kind === "drilling") {
+            bamboo.position.x = 0;
+          } else if (kind === "nockDip") {
+            if (raycaster.intersectObjects([bowl], true).length > 0) {
+              finishNockDip();
+            } else {
+              nockGroup.position.copy(nockOrigin);
+              showToast("오늬를 민어부레풀 그릇에 담가주세요.");
+            }
+          } else if (kind === "nockAttach") {
+            if (nockDipped && raycaster.intersectObject(holeTarget, false).length > 0) {
+              attachNock();
+            } else {
+              nockGroup.position.copy(nockOrigin);
+              showToast("갈색 부분을 화살대 끝의 구멍에 넣어주세요.");
+            }
+          }
+          event.preventDefault();
+        });
+
+        renderer.domElement.addEventListener("pointercancel", () => {
+          if (draggedKind === "shaftPosition") bamboo.position.copy(shaftOrigin);
+          else if (draggedKind === "nockDip" || draggedKind === "nockAttach") nockGroup.position.copy(nockOrigin);
+          else if (draggedKind === "drilling") bamboo.position.x = 0;
+          draggedKind = null;
+        });
+
+        document.getElementById("retry-button").addEventListener("click", resetStage);
+        document.getElementById("next-button").addEventListener("click", () => {
+          window.location.href = "stage9.html";
+        });
+
+        window.addEventListener("resize", resize);
+        resize();
+        updateProgress();
+        
+        renderer.setAnimationLoop(() => {
+          const delta = Math.min(clock.getDelta(), 0.05);
+          if (phase === "aligning") {
+            alignElapsed += delta;
+            const progress = Math.min(alignElapsed / 1, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            bamboo.position.lerpVectors(alignmentStartPosition, alignedPosition, eased);
+            bamboo.quaternion.slerpQuaternions(alignmentStartQuaternion, horizontalQuaternion, eased);
+            jig.position.lerpVectors(alignmentStartJigPosition, jigSidePosition, eased);
+            if (progress >= 1) {
+              phase = "dipNock";
+              nockGroup.visible = true;
+              bowl.visible = true;
+              instruction.textContent = "밝은 오늬를 민어부레풀 그릇에 담갔다가 꺼내세요.";
+              updateProgress();
+            }
+          }
+          renderer.render(scene, camera);
+        });      })();
+    }).catch((error) => {
+      console.error("Three.js failed to load; the wire-wrapping stage could not start.", error);
+      errorScreen.classList.add("is-visible");
+    });
+  </script>
+</body>
+</html>

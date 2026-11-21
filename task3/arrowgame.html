@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>대나무 공방 - 전체 과정</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #17211e;
+      }
+
+      #stage-host,
+      .stage-frame {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .stage-frame {
+        display: block;
+        border: 0;
+        background: #17211e;
+        opacity: 0;
+        transition: opacity .55s ease;
+      }
+
+      .stage-frame.is-active { opacity: 1; }
+      .stage-frame.is-leaving { opacity: 0; pointer-events: none; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .stage-frame { transition-duration: .01ms; }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="stage-host">
+      <iframe
+        class="stage-frame is-active"
+        src="stage1-bamboo-game.html"
+        title="대나무 공방 전체 과정"
+      ></iframe>
+    </main>
+    <script>
+      const stageHost = document.getElementById("stage-host");
+      let activeFrame = stageHost.querySelector("iframe");
+      let pendingFrame = null;
+      let pendingStage = null;
+
+      window.addEventListener("message", (event) => {
+        if (event.origin !== window.location.origin) return;
+        const message = event.data;
+        if (!message || typeof message !== "object") return;
+
+        if (
+          message.type === "stage-navigation"
+          && (message.stage === "stage2" || message.stage === "stage3")
+          && event.source === activeFrame.contentWindow
+          && !pendingFrame
+        ) {
+          pendingStage = message.stage;
+          pendingFrame = document.createElement("iframe");
+          pendingFrame.className = "stage-frame";
+          pendingFrame.title = `대나무 공방 ${pendingStage === "stage2" ? "2단계" : "3단계"}`;
+          pendingFrame.src = `${pendingStage}.html`;
+          stageHost.appendChild(pendingFrame);
+          return;
+        }
+
+        if (
+          message.type === "stage-ready"
+          && message.stage === pendingStage
+          && pendingFrame
+          && event.source === pendingFrame.contentWindow
+        ) {
+          const previousFrame = activeFrame;
+          activeFrame = pendingFrame;
+          pendingFrame = null;
+          pendingStage = null;
+          activeFrame.classList.add("is-active");
+          previousFrame.classList.remove("is-active");
+          previousFrame.classList.add("is-leaving");
+          window.setTimeout(() => previousFrame.remove(), 600);
+        }
+      });
+    </script>
+  </body>
+</html>

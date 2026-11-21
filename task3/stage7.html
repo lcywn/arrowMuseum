@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>대나무 공방 - 7단계 쇠심줄 감기</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f2ead8;
+      --gold: #d7ad6c;
+      --line: rgba(232, 214, 174, .18);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #17211e;
+      color: var(--ink);
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    }
+
+    button { font: inherit; }
+
+    #scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    #scene canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: default;
+    }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(13, 20, 18, .83) 0%, rgba(13, 20, 18, .55) 29%, transparent 58%),
+        linear-gradient(0deg, rgba(11, 17, 15, .78), transparent 34%, rgba(11, 17, 15, .3));
+    }
+
+    #interface {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .topbar {
+      position: absolute;
+      top: 26px;
+      left: clamp(24px, 4.2vw, 66px);
+      right: clamp(24px, 4.2vw, 66px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 39px;
+      height: 39px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .65);
+      border-radius: 50%;
+      color: var(--gold);
+      font-family: Georgia, serif;
+      font-size: 19px;
+      line-height: 1;
+    }
+
+    .brand-copy { display: grid; gap: 3px; }
+
+    .brand-copy small {
+      color: var(--gold);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .22em;
+    }
+
+    .brand-copy strong {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: .08em;
+    }
+
+    .stage-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px 9px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(21, 29, 26, .64);
+      color: #e8dfcc;
+      font-size: 12px;
+      letter-spacing: .04em;
+      backdrop-filter: blur(12px);
+    }
+
+    .stage-chip b {
+      display: grid;
+      width: 27px;
+      height: 27px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--gold);
+      color: #20231c;
+      font-family: Georgia, serif;
+      font-size: 12px;
+    }
+
+    .intro {
+      position: absolute;
+      top: clamp(145px, 25vh, 220px);
+      left: clamp(44px, 7vw, 112px);
+      width: min(480px, 40vw);
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 19px;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .2em;
+    }
+
+    .eyebrow::before {
+      width: 24px;
+      height: 1px;
+      background: var(--gold);
+      content: "";
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Batang", "Nanum Myeongjo", "Malgun Gothic", serif;
+      font-size: clamp(34px, 3.5vw, 49px);
+      font-weight: 500;
+      letter-spacing: -.08em;
+      line-height: 1.35;
+      text-shadow: 0 3px 24px rgba(0, 0, 0, .35);
+    }
+
+    h1 em {
+      color: #d9c294;
+      font-style: normal;
+    }
+
+    #instruction {
+      min-height: 48px;
+      margin: 18px 0 0;
+      color: #c7c7b8;
+      font-size: 13px;
+      letter-spacing: -.025em;
+      line-height: 1.8;
+      word-break: keep-all;
+    }
+
+    .gesture-note {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      margin-top: 24px;
+      color: #a7ad9e;
+      font-size: 11px;
+      letter-spacing: .015em;
+    }
+
+    #trace-game {
+      position: fixed;
+      z-index: 3;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    #trace-game[hidden], #trace-help[hidden] { display: none; }
+    #trace-light[hidden], #trace-start[hidden] { display: none; }
+
+    #trace-help {
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 5px);
+      transform: translateX(-50%);
+      min-height: 34px;
+      padding: 0 15px;
+      border: 1px solid rgba(232, 214, 174, .55);
+      border-radius: 999px;
+      background: rgba(25, 34, 31, .9);
+      color: #f2ead8;
+      font-size: 12px;
+      cursor: pointer;
+      pointer-events: auto;
+      white-space: nowrap;
+    }
+
+    #trace-svg {
+      display: block;
+      width: 100%;
+      overflow: visible;
+      touch-action: none;
+      pointer-events: auto;
+      cursor: crosshair;
+    }
+
+    .trace-outline, .trace-track, .trace-progress, .trace-sweep {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .trace-outline {
+      stroke: rgba(224, 240, 232, .88);
+      stroke-width: 12;
+      filter: drop-shadow(0 0 2px rgba(255, 255, 255, .45));
+    }
+
+    .trace-track { stroke: rgba(15, 54, 64, .92); stroke-width: 10; }
+    .trace-progress { stroke: #b7ece2; stroke-width: 7; }
+    .trace-sweep { stroke: #fff; stroke-width: 3; filter: drop-shadow(0 0 4px white); }
+    #trace-light { fill: white; filter: drop-shadow(0 0 5px white); }
+    #trace-start {
+      fill: rgba(255, 255, 255, .08);
+      stroke: white;
+      stroke-width: 1.2;
+      filter: drop-shadow(0 0 3px white);
+      animation: trace-start-pulse 1.4s ease-in-out infinite;
+    }
+
+    .trace-frame.is-error { animation: trace-shake .64s linear; }
+    .trace-frame.is-error .trace-outline {
+      stroke: #ffc0c0;
+      filter: drop-shadow(0 0 6px #ff8585);
+    }
+
+    @keyframes trace-start-pulse {
+      0%, 100% { opacity: .55; }
+      50% { opacity: 1; }
+    }
+
+    @keyframes trace-shake {
+      0%, 25%, 50%, 75%, 100% { transform: translateX(0); }
+      6.25%, 31.25%, 56.25%, 81.25% { transform: translateX(-5px); }
+      18.75%, 43.75%, 68.75%, 93.75% { transform: translateX(5px); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #trace-start { animation: none; }
+    }
+
+    @media (max-width: 600px) {
+      .vignette {
+        background: linear-gradient(0deg, rgba(11, 17, 15, .78), transparent 34%, rgba(11, 17, 15, .4));
+      }
+      .intro { top: 105px; left: 24px; width: calc(100% - 48px); }
+      .eyebrow { margin-bottom: 12px; }
+      h1 { font-size: 28px; }
+      #instruction { margin-top: 12px; }
+      .gesture-note { margin-top: 12px; }
+      #trace-help { bottom: auto; top: calc(100% + 5px); }
+    }
+
+    .cut-icon {
+      display: grid;
+      width: 31px;
+      height: 31px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .6);
+      border-radius: 50%;
+      color: var(--gold);
+      font-size: 14px;
+    }
+
+    #complete-screen {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(10, 16, 14, .38);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .3s, visibility .3s;
+      pointer-events: none;
+    }
+
+    #complete-screen.is-visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .complete-card {
+      width: min(435px, 100%);
+      padding: 36px 34px 30px;
+      border: 1px solid rgba(226, 202, 152, .34);
+      border-radius: 20px;
+      background: rgba(26, 35, 31, .94);
+      box-shadow: 0 25px 90px rgba(0, 0, 0, .45);
+      text-align: center;
+      backdrop-filter: blur(18px);
+      transform: translateY(12px) scale(.98);
+      transition: transform .35s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    #complete-screen.is-visible .complete-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .complete-seal {
+      display: grid;
+      width: 51px;
+      height: 51px;
+      margin: 0 auto 17px;
+      place-items: center;
+      border: 1px solid rgba(215, 173, 108, .65);
+      border-radius: 50%;
+      color: #ecd09b;
+      font-size: 22px;
+    }
+
+    .complete-kicker {
+      margin: 0 0 9px;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .2em;
+    }
+
+    .complete-card h2 {
+      margin: 0;
+      font-family: "Batang", "Nanum Myeongjo", "Malgun Gothic", serif;
+      font-size: 31px;
+      font-weight: 500;
+      letter-spacing: -.06em;
+    }
+
+    .complete-copy {
+      margin: 12px 0 25px;
+      color: #b8bbae;
+      font-size: 12px;
+      line-height: 1.8;
+      word-break: keep-all;
+    }
+
+    .complete-actions {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 9px;
+    }
+
+    .action-button {
+      min-height: 44px;
+      padding: 0 13px;
+      border: 1px solid rgba(231, 215, 180, .24);
+      border-radius: 9px;
+      background: transparent;
+      color: #ded8c8;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: -.02em;
+      cursor: pointer;
+      transition: background .2s, border-color .2s, transform .2s;
+      pointer-events: auto;
+    }
+
+    .action-button:hover {
+      border-color: rgba(231, 215, 180, .6);
+      background: rgba(255, 255, 255, .05);
+      transform: translateY(-1px);
+    }
+
+    .action-button.primary {
+      border-color: #d6ad70;
+      background: #d6ad70;
+      color: #25271f;
+    }
+
+    .action-button.primary:hover {
+      border-color: #ebc98e;
+      background: #ebc98e;
+    }
+
+    #toast {
+      position: absolute;
+      bottom: 138px;
+      left: 50%;
+      padding: 10px 15px;
+      border: 1px solid rgba(227, 206, 164, .22);
+      border-radius: 999px;
+      background: rgba(23, 31, 28, .9);
+      color: #e4d7bb;
+      font-size: 11px;
+      opacity: 0;
+      transform: translate(-50%, 8px);
+      transition: opacity .2s, transform .2s;
+      white-space: nowrap;
+    }
+
+    #toast.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    #load-error {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: none;
+      place-items: center;
+      padding: 24px;
+      background: #17211e;
+      color: #f2ead8;
+      text-align: center;
+    }
+
+    #load-error.is-visible { display: grid; }
+    #load-error p { max-width: 470px; line-height: 1.8; }
+  </style>
+</head>
+<body>
+  <div id="scene" aria-label="쇠심줄을 대나무에 감는 3D 작업대"></div>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <main id="interface">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">竹</div>
+        <div class="brand-copy">
+          <small>HANDCRAFT WORKSHOP</small>
+          <strong>대나무 공방</strong>
+        </div>
+      </div>
+      <div class="stage-chip"><b>07</b><span>7단계 · 쇠심줄 감기</span></div>
+    </header>
+
+    <section class="intro" aria-live="polite">
+      <p class="eyebrow">STAGE 07 &nbsp; / &nbsp; IRON WIRE WRAPPING</p>
+      <h1>쇠심줄을<br><em>대나무 양쪽에 감아주세요</em></h1>
+      <p id="instruction">빛이 지나가는 방향을 보고 선을 따라 그려주세요.</p>
+      <div class="gesture-note">
+        <span class="cut-icon" aria-hidden="true">↻</span>
+        <span>시작점부터 끝까지 손을 떼지 않고 따라 그려주세요</span>
+      </div>
+    </section>
+
+    <div id="trace-game" hidden>
+      <button id="trace-help" type="button" hidden>도움받기</button>
+      <svg id="trace-svg" viewBox="0 8 170 112" aria-label="표시된 시작점부터 선을 따라 그리세요">
+        <circle id="trace-start-hit" fill="transparent" pointer-events="all"></circle>
+        <g class="trace-frame">
+          <path id="trace-outline" class="trace-outline"></path>
+          <path id="trace-track" class="trace-track"></path>
+          <path id="trace-progress" class="trace-progress"></path>
+          <path id="trace-sweep" class="trace-sweep"></path>
+          <circle id="trace-light" r="2.7" hidden></circle>
+          <circle id="trace-start" r="5.2" hidden></circle>
+        </g>
+      </svg>
+    </div>
+
+    <section id="complete-screen" aria-modal="true" role="dialog" aria-labelledby="complete-title">
+      <div class="complete-card">
+        <div class="complete-seal" aria-hidden="true">✓</div>
+        <p class="complete-kicker">STAGE 07 COMPLETE</p>
+        <h2 id="complete-title">7단계 완료</h2>
+        <p class="complete-copy">대나무 양쪽에 쇠심줄을 감았어요.<br>다음 작업을 준비해보세요.</p>
+        <div class="complete-actions">
+          <button class="action-button" id="retry-button" type="button">7단계 다시하기</button>
+          <button class="action-button primary" id="next-button" type="button">8단계로 넘어가기 <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+    </section>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <div id="load-error" role="alert">
+    <p>3D 장면을 불러오지 못했습니다.<br>인터넷 연결을 확인한 뒤 페이지를 새로고침해주세요.</p>
+  </div>
+
+  <script src="../additionalAssets/Bamboo.js"></script>
+  <script src="stage7-trace.js"></script>
+  <script src="stage7Bamboo.js"></script>
+  <script type="module">
+    const errorScreen = document.getElementById("load-error");
+    import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js").then((THREE) => {
+      (() => {
+        "use strict";
+
+        const host = document.getElementById("scene");
+        const instruction = document.getElementById("instruction");
+        const completionScreen = document.getElementById("complete-screen");
+        const toast = document.getElementById("toast");
+        const traceElement = document.getElementById("trace-game");
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x17211e);
+        scene.fog = new THREE.Fog(0x17211e, 17, 32);
+
+        const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 80);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.08;
+        host.appendChild(renderer.domElement);
+
+        scene.add(new THREE.HemisphereLight(0xe4ddc5, 0x263732, 1.7));
+
+        const keyLight = new THREE.DirectionalLight(0xffd8a0, 3.1);
+        keyLight.position.set(-4.5, 9, 6);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.set(2048, 2048);
+        keyLight.shadow.camera.left = -9;
+        keyLight.shadow.camera.right = 9;
+        keyLight.shadow.camera.top = 9;
+        keyLight.shadow.camera.bottom = -8;
+        keyLight.shadow.bias = -0.00025;
+        scene.add(keyLight);
+
+        const fillLight = new THREE.PointLight(0x8eaa8b, 22, 17, 2);
+        fillLight.position.set(-4, 4, -2);
+        scene.add(fillLight);
+
+        const ground = new THREE.Mesh(
+          new THREE.PlaneGeometry(80, 80),
+          new THREE.MeshStandardMaterial({ color: 0x18231f, roughness: 0.96 })
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.78;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        const wall = new THREE.Mesh(
+          new THREE.BoxGeometry(15, 5, 0.24),
+          new THREE.MeshStandardMaterial({ color: 0x202c27, roughness: 0.9 })
+        );
+        wall.position.set(0, 1.72, -4.12);
+        wall.receiveShadow = true;
+        wall.castShadow = true;
+        scene.add(wall);
+
+        const slatMaterial = new THREE.MeshStandardMaterial({ color: 0x2d3931, roughness: 0.8 });
+        for (let x = -7; x <= 7; x += 0.72) {
+          const slat = new THREE.Mesh(new THREE.BoxGeometry(0.045, 3.7, 0.06), slatMaterial);
+          slat.position.set(x, 1.7, -3.96);
+          slat.castShadow = true;
+          scene.add(slat);
+        }
+
+        function addBox(parent, size, material, position) {
+          const mesh = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), material);
+          mesh.position.set(position[0], position[1], position[2]);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          parent.add(mesh);
+          return mesh;
+        }
+
+        const table = new THREE.Group();
+        scene.add(table);
+        const plankColors = [0x624a32, 0x705238, 0x664a30, 0x76583b, 0x624831];
+        for (let index = 0; index < 5; index += 1) {
+          const material = new THREE.MeshStandardMaterial({
+            color: plankColors[index],
+            roughness: 0.83,
+            metalness: 0.02
+          });
+          addBox(table, [9.7, 0.2, 0.97], material, [0, 0.46, -1.94 + index * 0.97]);
+        }
+
+        const tableEdgeMaterial = new THREE.MeshStandardMaterial({ color: 0x493723, roughness: 0.78 });
+        addBox(table, [9.84, 0.09, 0.09], tableEdgeMaterial, [0, 0.39, -2.48]);
+        addBox(table, [9.84, 0.09, 0.09], tableEdgeMaterial, [0, 0.39, 2.48]);
+
+        const legMaterial = new THREE.MeshStandardMaterial({ color: 0x493723, roughness: 0.84 });
+        for (const x of [-4.18, 4.18]) {
+          for (const z of [-2.05, 2.05]) {
+            addBox(table, [0.23, 1.15, 0.23], legMaterial, [x, -0.115, z]);
+          }
+        }
+
+        const braceMaterial = new THREE.MeshStandardMaterial({ color: 0x55402b, roughness: 0.85 });
+        addBox(table, [8.35, 0.16, 0.2], braceMaterial, [0, -0.25, -2.02]);
+        addBox(table, [8.35, 0.16, 0.2], braceMaterial, [0, -0.25, 2.02]);
+        addBox(table, [0.19, 0.15, 4.15], braceMaterial, [-3.98, -0.25, 0]);
+        addBox(table, [0.19, 0.15, 4.15], braceMaterial, [3.98, -0.25, 0]);
+
+        const TABLE_TOP = 0.56;
+        const bambooAsset = createBamboo(THREE, { cut: true });
+        const bamboo = bambooAsset.group;
+        bamboo.position.set(0, TABLE_TOP + 0.056, 1.28);
+        scene.add(bamboo);
+        const inkAsset = createBambooInk(THREE, bambooAsset, { painted: true });
+        for (let index = 0; index < 2; index += 1) {
+          bambooAsset.ends[index].visible = false;
+          createBambooRoundedEnd(THREE, bambooAsset, index === 0 ? bambooAsset.start : bambooAsset.end);
+        }
+        const glueAsset = createBambooGlue(THREE, bambooAsset, inkAsset, { painted: true });
+        const coatingBounds = glueAsset.bounds;
+        const threadMaterial = new THREE.MeshStandardMaterial({
+          color: 0xf3efe4,
+          roughness: 0.68,
+          metalness: 0.02
+        });
+        const wrapGroups = [];
+        const looseThreads = [];
+        for (let index = 0; index < coatingBounds.length; index += 1) {
+          const [start, end] = coatingBounds[index];
+          const wrapCenter = (start + end) / 2;
+          const wrapStart = index === 0 ? start : end;
+          const wrapEnd = index === 0 ? end : start;
+          const helixPoints = [];
+          const pointCount = 128;
+          const loopCount = 4;
+          for (let pointIndex = 0; pointIndex <= pointCount; pointIndex += 1) {
+            const amount = pointIndex / pointCount;
+            const angle = amount * loopCount * Math.PI * 2;
+            const x = wrapStart + (wrapEnd - wrapStart) * amount - wrapCenter;
+            helixPoints.push(new THREE.Vector3(
+              x,
+              Math.sin(angle) * 0.0515,
+              Math.cos(angle) * 0.0515
+            ));
+          }
+          const wrapGroup = new THREE.Group();
+          wrapGroup.position.x = wrapCenter;
+          wrapGroup.visible = false;
+          const wrappedWire = new THREE.Mesh(
+            new THREE.TubeGeometry(new THREE.CatmullRomCurve3(helixPoints), 128, 0.006, 8, false),
+            threadMaterial
+          );
+          wrappedWire.castShadow = true;
+          wrappedWire.receiveShadow = true;
+          wrapGroup.add(wrappedWire);
+          bamboo.add(wrapGroup);
+          wrapGroups.push(wrapGroup);
+
+          const originX = index === 0 ? -2.05 : 2.05;
+          const threadGroup = new THREE.Group();
+          threadGroup.position.set(originX, TABLE_TOP + 0.2, bamboo.position.z);
+          threadGroup.userData.wrapIndex = index;
+          scene.add(threadGroup);
+          const looseCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(0, 0.42, 0),
+            new THREE.Vector3(0.025, 0.24, 0.035),
+            new THREE.Vector3(-0.02, 0.04, -0.02),
+            new THREE.Vector3(0.015, -0.16, 0.01)
+          ]);
+          const looseWire = new THREE.Mesh(
+            new THREE.TubeGeometry(looseCurve, 48, 0.007, 8, false),
+            threadMaterial
+          );
+          looseWire.userData.wrapIndex = index;
+          looseWire.castShadow = true;
+          threadGroup.add(looseWire);
+          looseThreads.push(threadGroup);
+        }
+
+        const cameraDirection = new THREE.Vector3(0, 5.7, 10.8).normalize();
+        const cameraUp = new THREE.Vector3(0, cameraDirection.z, -cameraDirection.y);
+        const cameraFromPosition = new THREE.Vector3();
+        const cameraFromTarget = new THREE.Vector3();
+        const cameraToPosition = new THREE.Vector3();
+        const cameraToTarget = new THREE.Vector3();
+        const cameraTarget = new THREE.Vector3();
+        const cameraDuration = 1400;
+        const wrapAnimations = [];
+        const clock = new THREE.Clock();
+        let wrapCount = 0;
+        let phase = "moving";
+        let currentSide = 1;
+        let cameraFromSide = null;
+        let cameraProgress = 0;
+        let cameraStartTime = performance.now();
+        let toastTimer = 0;
+
+        function setStage6Pose(position, target) {
+          const halfFov = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+          const distance = Math.max(7.5, 2.4 / (halfFov * camera.aspect * 0.9));
+          const halfWidth = distance * halfFov * camera.aspect;
+          target.set(Math.min(0.65, 2.75 - halfWidth * 0.92), TABLE_TOP + 0.056, 1.28);
+          target.addScaledVector(cameraUp, distance * halfFov * 0.28);
+          position.copy(target).addScaledVector(cameraDirection, distance);
+        }
+
+        function setSidePose(index, position, target) {
+          const halfFov = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+          const coatingLength = coatingBounds[index][1] - coatingBounds[index][0];
+          const distance = Math.min(1.3, Math.max(0.8, coatingLength * host.clientHeight / (2 * halfFov * 150)));
+          const center = (coatingBounds[index][0] + coatingBounds[index][1]) / 2;
+          const mobile = window.innerWidth <= 600;
+          const screenX = mobile ? 0.5 : 0.67;
+          target.set(center + (0.5 - screenX) * 2 * distance * halfFov * camera.aspect, TABLE_TOP + 0.056, 1.28);
+          if (mobile) target.addScaledVector(cameraUp, distance * halfFov * 0.08);
+          position.copy(target).addScaledVector(cameraDirection, distance);
+        }
+
+        function updateCamera() {
+          camera.position.lerpVectors(cameraFromPosition, cameraToPosition, cameraProgress);
+          cameraTarget.lerpVectors(cameraFromTarget, cameraToTarget, cameraProgress);
+          camera.lookAt(cameraTarget);
+        }
+
+        function positionTraceGame() {
+          camera.updateMatrixWorld(true);
+          bamboo.updateWorldMatrix(true, false);
+          const rect = renderer.domElement.getBoundingClientRect();
+          const [start, end] = coatingBounds[currentSide];
+          const project = (x) => {
+            const point = bamboo.localToWorld(new THREE.Vector3(x, 0, 0)).project(camera);
+            return {
+              x: rect.left + (point.x + 1) * rect.width / 2,
+              y: rect.top + (1 - point.y) * rect.height / 2
+            };
+          };
+          const left = project(start);
+          const right = project(end);
+          traceElement.style.left = `${(left.x + right.x) / 2}px`;
+          traceElement.style.top = `${(left.y + right.y) / 2}px`;
+          traceElement.style.width = `${right.x - left.x}px`;
+        }
+
+        function resize() {
+          const width = Math.max(1, host.clientWidth);
+          const height = Math.max(1, host.clientHeight);
+          camera.aspect = width / height;
+          if (cameraFromSide === null) {
+            setStage6Pose(cameraFromPosition, cameraFromTarget);
+          } else {
+            setSidePose(cameraFromSide, cameraFromPosition, cameraFromTarget);
+          }
+          setSidePose(currentSide, cameraToPosition, cameraToTarget);
+          updateCamera();
+          camera.updateProjectionMatrix();
+          renderer.setSize(width, height, false);
+          positionTraceGame();
+        }
+
+        function showToast(message) {
+          toast.textContent = message;
+          toast.classList.add("is-visible");
+          window.clearTimeout(toastTimer);
+          toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 2400);
+        }
+
+        function finishWrap(index) {
+          wrapCount += 1;
+          if (wrapCount === wrapGroups.length) {
+            phase = "complete";
+            instruction.textContent = "대나무 양쪽에 쇠심줄을 감았습니다.";
+            completionScreen.classList.add("is-visible");
+            
+            // Store completed bamboo state for stage8
+            window.stage7BambooResult.group = bamboo;
+            window.stage7BambooResult.asset = bambooAsset;
+            window.stage7BambooResult.ink = inkAsset;
+            window.stage7BambooResult.glue = glueAsset;
+            window.stage7BambooResult.wrap = wrapGroups;
+          } else {
+            phase = "moving";
+            cameraFromSide = index;
+            currentSide = 0;
+            cameraProgress = 0;
+            cameraStartTime = performance.now();
+            instruction.textContent = "오른쪽을 감았어요. 왼쪽으로 이동합니다.";
+            resize();
+          }
+        }
+
+        function beginWrapping(index) {
+          phase = "wrapping";
+          looseThreads[index].visible = false;
+          wrapGroups[index].visible = true;
+          wrapGroups[index].scale.setScalar(0.01);
+          wrapAnimations.push({ index: index, elapsed: 0, duration: 0.75 });
+          instruction.textContent = "실이 갈색 부분을 따라 감기고 있어요.";
+        }
+
+        const traceGame = createTraceGame({
+          onComplete: () => beginWrapping(currentSide),
+          onMistake: (mistakes) => {
+            instruction.textContent = mistakes >= 2
+              ? "시작점부터 다시 그리거나 도움받기를 눌러주세요."
+              : "선을 벗어났어요. 시작점부터 다시 따라 그려주세요.";
+            showToast("선을 따라 끝까지 이어서 그려주세요.");
+          }
+        });
+
+        function resetStage() {
+          traceGame.reset();
+          phase = "moving";
+          wrapCount = 0;
+          currentSide = 1;
+          cameraFromSide = null;
+          cameraProgress = 0;
+          cameraStartTime = performance.now();
+          for (const animation of wrapAnimations) {
+            wrapGroups[animation.index].visible = false;
+          }
+          wrapAnimations.length = 0;
+          for (let index = 0; index < looseThreads.length; index += 1) {
+            looseThreads[index].visible = true;
+            wrapGroups[index].visible = false;
+            wrapGroups[index].scale.setScalar(1);
+          }
+          completionScreen.classList.remove("is-visible");
+          instruction.textContent = "빛이 지나가는 방향을 보고 선을 따라 그려주세요.";
+          toast.classList.remove("is-visible");
+          resize();
+        }
+
+        document.getElementById("retry-button").addEventListener("click", resetStage);
+        document.getElementById("next-button").addEventListener("click", () => {
+          window.location.href = "stage8.html";
+        });
+
+        window.addEventListener("resize", resize);
+        resize();
+        renderer.setAnimationLoop(() => {
+          const now = performance.now();
+          const delta = Math.min(clock.getDelta(), 0.05);
+          if (phase === "moving") {
+            const progress = Math.min((now - cameraStartTime) / cameraDuration, 1);
+            cameraProgress = THREE.MathUtils.smoothstep(progress, 0, 1);
+            updateCamera();
+            if (progress === 1) {
+              phase = "tracing";
+              instruction.textContent = "빛이 지나가는 방향을 보고 선을 따라 그려주세요.";
+              positionTraceGame();
+              traceGame.start();
+            }
+          }
+          traceGame.update(now);
+          for (let index = wrapAnimations.length - 1; index >= 0; index -= 1) {
+            const animation = wrapAnimations[index];
+            animation.elapsed += delta;
+            const progress = Math.min(animation.elapsed / animation.duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            wrapGroups[animation.index].scale.setScalar(0.01 + 0.99 * eased);
+            if (progress >= 1) {
+              wrapGroups[animation.index].scale.setScalar(1);
+              wrapAnimations.splice(index, 1);
+              finishWrap(animation.index);
+            }
+          }
+          renderer.render(scene, camera);
+        });
+      })();
+    }).catch((error) => {
+      console.error("Three.js failed to load; the wire-wrapping stage could not start.", error);
+      errorScreen.classList.add("is-visible");
+    });
+  </script>
+</body>
+</html>
